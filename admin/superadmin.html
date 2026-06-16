@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super Admin Dashboard - ADE Natural Cereals</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌾</text></svg>">
+</head>
+<body>
+  <div class="admin-body">
+    <!-- Mobile Toggle -->
+    <button class="mobile-toggle" id="mobile-toggle">
+      <i class="fas fa-bars"></i>
+    </button>
+    
+    <!-- Toast Container -->
+    <div class="toast-container" id="admin-toast-container"></div>
+    
+    <!-- Modal -->
+    <div class="modal-overlay" id="admin-modal" onclick="if(event.target===this)closeAdminModal()">
+      <div class="modal-content" id="admin-modal-content"></div>
+    </div>
+    
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="logo">
+        <div>
+          <h2>ADE</h2>
+          <span>Super Admin</span>
+        </div>
+      </div>
+      <nav class="admin-nav">
+        <a href="#" class="active" data-tab="dashboard" onclick="switchTab('dashboard')">
+          <i class="fas fa-chart-pie"></i> Dashboard
+        </a>
+        <a href="#" data-tab="orders" onclick="switchTab('orders')">
+          <i class="fas fa-shopping-cart"></i> Orders
+        </a>
+        <a href="#" data-tab="products" onclick="switchTab('products')">
+          <i class="fas fa-box"></i> Products
+        </a>
+        <a href="#" data-tab="customers" onclick="switchTab('customers')">
+          <i class="fas fa-users"></i> Customers
+        </a>
+        <a href="#" data-tab="admins" onclick="switchTab('admins')">
+          <i class="fas fa-shield-alt"></i> Admins
+        </a>
+        <a href="#" data-tab="settings" onclick="switchTab('settings')">
+          <i class="fas fa-cog"></i> Settings
+        </a>
+        <a href="#" onclick="logoutAdmin()" style="margin-top:32px;color:var(--pink)">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+      </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="admin-main">
+      <!-- Header -->
+      <div class="admin-header">
+        <h1>Super Admin <span style="background:var(--gold-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Dashboard</span></h1>
+        <div class="admin-user">
+          <div class="admin-avatar" id="admin-avatar">SA</div>
+          <div class="admin-user-info">
+            <div class="name" id="admin-name">Super Admin</div>
+            <div class="role" id="admin-role">Super Admin</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">
+          <i class="fas fa-chart-pie"></i> Dashboard
+        </button>
+        <button class="tab-btn" data-tab="orders" onclick="switchTab('orders')">
+          <i class="fas fa-shopping-cart"></i> Orders
+        </button>
+        <button class="tab-btn" data-tab="products" onclick="switchTab('products')">
+          <i class="fas fa-box"></i> Products
+        </button>
+        <button class="tab-btn" data-tab="customers" onclick="switchTab('customers')">
+          <i class="fas fa-users"></i> Customers
+        </button>
+        <button class="tab-btn" data-tab="admins" onclick="switchTab('admins')">
+          <i class="fas fa-shield-alt"></i> Manage Admins
+        </button>
+        <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')">
+          <i class="fas fa-cog"></i> Settings
+        </button>
+      </div>
+      
+      <!-- Tab: Dashboard -->
+      <div class="tab-content active" id="tab-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-header">
+              <i class="fas fa-shopping-cart"></i>
+            </div>
+            <div class="stat-number" id="stat-total">0</div>
+            <div class="stat-label">Total Orders</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-header">
+              <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-number" id="stat-pending">0</div>
+            <div class="stat-label">Pending Orders</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-header">
+              <i class="fas fa-naira-sign"></i>
+            </div>
+            <div class="stat-number" id="stat-revenue">₦0</div>
+            <div class="stat-label">Total Revenue</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-header">
+              <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-number" id="stat-customers">0</div>
+            <div class="stat-label">Customers</div>
+          </div>
+        </div>
+        
+        <div class="glass-card">
+          <h3>Recent Orders</h3>
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Order #</th>
+                <th>Customer</th>
+                <th>Total</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="recent-orders"></tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- Tab: Orders -->
+      <div class="tab-content" id="tab-orders">
+        <div class="glass-card">
+          <h3>All Orders Management</h3>
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Order #</th>
+                <th>Customer</th>
+                <th>Phone</th>
+                <th>Total</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Tracking</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="orders-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- Tab: Products -->
+      <div class="tab-content" id="tab-products">
+        <div class="glass-card">
+          <h3>Product Management</h3>
+          <div style="margin-bottom:16px">
+            <button class="btn btn-gold" onclick="showToast('Add Product - Coming soon')"><i class="fas fa-plus"></i> Add Product</button>
+          </div>
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Original Price</th>
+                <th>Sale Price</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="products-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- Tab: Customers -->
+      <div class="tab-content" id="tab-customers">
+        <div class="glass-card">
+          <h3>Customer Management</h3>
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Orders</th>
+                <th>Total Spent</th>
+              </tr>
+            </thead>
+            <tbody id="customers-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- Tab: Admin Management -->
+      <div class="tab-content" id="tab-admins">
+        <div class="glass-card">
+          <h3>Admin Accounts (5 max)</h3>
+          
+          <!-- Add Admin Form -->
+          <div id="add-admin-form" style="display:none;margin-bottom:24px;padding:20px;background:var(--glass-bg);border-radius:12px;border:1px solid var(--glass-border)">
+            <h4 style="font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;color:var(--gold)">Add New Admin</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="new-admin-name" placeholder="Enter admin name">
+              </div>
+              <div class="form-group">
+                <label>Gmail Address</label>
+                <input type="email" id="new-admin-email" placeholder="admin@gmail.com">
+              </div>
+            </div>
+            <button class="btn btn-gold" onclick="addAdmin()"><i class="fas fa-plus"></i> Add Admin</button>
+          </div>
+          
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Admin</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admins-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- Tab: Settings -->
+      <div class="tab-content" id="tab-settings">
+        <div class="glass-card">
+          <h3>Website Settings</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Bank Name</label>
+              <input type="text" id="setting-bank-name" placeholder="GTBank">
+            </div>
+            <div class="form-group">
+              <label>Account Name</label>
+              <input type="text" id="setting-account-name" placeholder="ADE Natural Cereals">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Account Number</label>
+            <input type="text" id="setting-account-number" placeholder="0123 456 7890">
+          </div>
+          <div class="form-group">
+            <label>WhatsApp Business Number</label>
+            <input type="text" id="setting-whatsapp" placeholder="2348012345678">
+          </div>
+          <div style="margin-top:24px;padding-top:24px;border-top:1px solid var(--glass-border)">
+            <h4 style="font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;color:var(--gold)">Sales Report</h4>
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+              <button class="btn btn-gold" onclick="showToast('Export report - Coming soon')"><i class="fas fa-download"></i> Export Sales Report</button>
+              <button class="btn btn-ghost" onclick="showToast('Report feature coming soon')"><i class="fas fa-chart-bar"></i> View Reports</button>
+            </div>
+          </div>
+          <button class="btn btn-gold" style="margin-top:20px" onclick="saveSettings()"><i class="fas fa-save"></i> Save Settings</button>
+        </div>
+      </div>
+      
+    </main>
+  </div>
+  
+  <script src="../js/products.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
