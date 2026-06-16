@@ -1,0 +1,13 @@
+{
+  "name": "ade-ecommerce",
+  "version": "1.0.0",
+  "description": "ADE Natural Cereals - Ecommerce Site",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build": "echo 'Static site - no build required'"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
