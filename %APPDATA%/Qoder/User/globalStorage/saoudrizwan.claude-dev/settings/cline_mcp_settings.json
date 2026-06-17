@@ -1,0 +1,111 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "C:\\Users\\13IM3\\AppData\\Roaming\\nvm\\v22.14.0\\node.exe",
+      "args": [
+        "C:\\Users\\13IM3\\AppData\\Roaming\\nvm\\v22.14.0\\node_modules\\@modelcontextprotocol\\server-filesystem\\dist\\index.js",
+        "C:\\Users\\13IM3\\Desktop\\ecommerce-site",
+        "C:\\Users\\13IM3\\Desktop"
+      ],
+      "env": {},
+      "disabled": false,
+      "autoApprove": [
+        "read_file",
+        "write_file",
+        "edit_file",
+        "list_directory"
+      ]
+    },
+    "github": {
+      "command": "C:\\Users\\13IM3\\Documents\\Cline\\MCP\\github.com\\github\\github-mcp-server\\github-mcp-server.exe",
+      "args": [
+        "stdio"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_GITHUB_TOKEN"
+      },
+      "disabled": false,
+      "autoApprove": []
+    },
+    "sequentialthinking": {
+      "command": "C:\\Users\\13IM3\\AppData\\Roaming\\nvm\\v22.14.0\\node.exe",
+      "args": [
+        "C:\\Users\\13IM3\\AppData\\Roaming\\nvm\\v22.14.0\\node_modules\\@modelcontextprotocol\\server-sequential-thinking\\dist\\index.js"
+      ],
+      "env": {},
+      "disabled": false,
+      "autoApprove": []
+    },
+    "fetch": {
+      "command": "C:\\Users\\13IM3\\AppData\\Roaming\\nvm\\v22.14.0\\node.exe",
+      "args": [
+        "C:\\Users\\13IM3\\AppData\\Roaming\\nvm\\v22.14.0\\node_modules\\@modelcontextprotocol\\server-fetch\\dist\\index.js"
+      ],
+      "env": {},
+      "disabled": false,
+      "autoApprove": []
+    },
+    "playwright": {
+      "command": "C:\\Users\\13IM3\\AppData\\Roaming\\nvm\\v22.14.0\\node.exe",
+      "args": [
+        "C:\\Users\\13IM3\\AppData\\Roaming\\nvm\\v22.14.0\\node_modules\\@executeautomation\\playwright-mcp-server\\dist\\index.js"
+      ],
+      "env": {},
+      "disabled": false,
+      "autoApprove": []
+    },
+    "memory": {
+      "command": "C:\\Users\\13IM3\\AppData\\Roaming\\nvm\\v22.14.0\\node.exe",
+      "args": [
+        "C:\\Users\\13IM3\\AppData\\Roaming\\nvm\\v22.14.0\\node_modules\\@modelcontextprotocol\\server-memory\\dist\\index.js"
+      ],
+      "env": {},
+      "disabled": false,
+      "autoApprove": []
+    },
+    "ui-ux-pro": {
+      "command": "C:\\Users\\13IM3\\AppData\\Roaming\\nvm\\v22.14.0\\node.exe",
+      "args": [
+        "C:\\Users\\13IM3\\AppData\\Roaming\\nvm\\v22.14.0\\node_modules\\ui-ux-pro-mcp\\dist\\index.js",
+        "--stdio"
+      ],
+      "env": {},
+      "disabled": false,
+      "autoApprove": []
+    },
+     "lmstudio": {
+       "command": "C:\\Users\\13IM3\\AppData\\Roaming\\nvm\\v22.14.0\\node.exe",
+       "args": [
+         "C:\\Users\\13IM3\\AppData\\Roaming\\nvm\\v22.14.0\\node_modules\\@lmstudio-ai\\mcp-server-lmstudio\\dist\\index.js",
+         "--endpoint",
+         "http://localhost:1234"
+       ],
+       "env": {
+         "LMSTUDIO_HOST": "http://localhost:1234",
+         "LMSTUDIO_MODEL": "qwen/qwen3.5-9b"
+       },
+       "disabled": false,
+       "autoApprove": []
+     },
+     "ux-master": {
+       "command": "C:\\Users\\13IM3\\AppData\\Roaming\\nvm\\v22.14.0\\node.exe",
+       "args": [
+         "C:\\Users\\13IM3\\Documents\\Cline\\MCP\\ux-master-mcp\\dist\\index.js"
+       ],
+       "env": {},
+       "disabled": false,
+       "autoApprove": []
+     }
+   },
+   "removedServers": [
+    "php-mcp-server",
+    "context7-mcp",
+    "e2b-mcp",
+    "chrome-devtools-mcp",
+    "vercel",
+    "shadcn-ui",
+    "tailwind-console",
+    "docker",
+    "context7"
+  ]
+}

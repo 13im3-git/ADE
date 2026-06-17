@@ -80,34 +80,56 @@ function updateCartCount() {
 
 // ===== NAVIGATION =====
 function navigateTo(page, data = null) {
-  // Hide all pages
-  document.querySelectorAll('.page-content').forEach(el => {
-    el.classList.remove('active');
-  });
+  const allPages = document.querySelectorAll('.page-content');
+  const currentPage = allPages.find(p => p.classList.contains('active'));
+  const targetEl = document.getElementById(`page-${page}`);
   
-  // Show target page
-  const target = document.getElementById(`page-${page}`);
-  if (target) {
-    target.classList.add('active');
-    STATE.currentPage = page;
-    
-    // Update active nav link
-    document.querySelectorAll('.nav-links a, .mobile-menu a').forEach(el => {
-      el.classList.toggle('active', el.dataset.page === page);
+  if (currentPage && targetEl && currentPage !== targetEl && typeof gsap !== 'undefined') {
+    gsap.to(currentPage, {
+      opacity: 0,
+      y: -16,
+      duration: 0.28,
+      ease: 'power2.in',
+      onComplete: () => {
+        currentPage.classList.remove('active');
+        gsap.set(currentPage, { opacity: 1, y: 0 });
+        showPage(targetEl, page, data);
+      }
     });
-    
-    // Close mobile menu
-    closeMobileMenu();
-    
-    // Render page content
-    renderPage(page, data);
-    
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else if (targetEl) {
+    if (currentPage) currentPage.classList.remove('active');
+    showPage(targetEl, page, data);
   }
   
   // Close cart if open
   closeCart();
+}
+
+function showPage(targetEl, page, data) {
+  targetEl.classList.add('active');
+  STATE.currentPage = page;
+  
+  // Update active nav link
+  document.querySelectorAll('.nav-links a, .mobile-menu a').forEach(el => {
+    el.classList.toggle('active', el.dataset.page === page);
+  });
+  
+  // Close mobile menu
+  closeMobileMenu();
+  
+  // Render page content
+  renderPage(page, data);
+  
+  // Animate page entrance
+  if (typeof gsap !== 'undefined') {
+    gsap.fromTo(targetEl, 
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }
+    );
+  }
+  
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function renderPage(page, data) {
@@ -227,16 +249,18 @@ function renderProductCard(product) {
 function renderTestimonials() {
   const container = document.getElementById('testimonials-container');
   if (!container) return;
-  
+
   container.innerHTML = TESTIMONIALS.map(t => `
-    <div class="glass-card testimonial-card fade-up">
-      <div class="testimonial-quote">"</div>
-      <p class="testimonial-text">${t.text}</p>
-      <div class="testimonial-author">
-        <div class="testimonial-avatar">${t.avatar}</div>
-        <div>
-          <div class="testimonial-name">${t.name}</div>
-          <span class="testimonial-role">${t.role}</span>
+    <div class="swiper-slide">
+      <div class="glass-card testimonial-card fade-up" data-aos="fade-up" data-aos-delay="0">
+        <div class="testimonial-quote">"</div>
+        <p class="testimonial-text">${t.text}</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">${t.avatar}</div>
+          <div>
+            <div class="testimonial-name">${t.name}</div>
+            <span class="testimonial-role">${t.role}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -246,27 +270,29 @@ function renderTestimonials() {
 function renderBeforeAfter() {
   const container = document.getElementById('before-after-container');
   if (!container) return;
-  
+
   container.innerHTML = BEFORE_AFTER.map(ba => `
-    <div class="glass-card before-after-card fade-up">
-      <div class="before">
-        <div class="product-placeholder" style="height:100%">
-          <div style="text-align:center">
-            <div style="font-size:2rem;margin-bottom:8px;opacity:0.5">Before</div>
-            <div style="font-size:0.8rem;opacity:0.3">${ba.name}</div>
+    <div class="swiper-slide">
+      <div class="glass-card before-after-card fade-up" data-aos="fade-up" data-aos-delay="0">
+        <div class="before">
+          <div class="product-placeholder" style="height:100%">
+            <div style="text-align:center">
+              <div style="font-size:2rem;margin-bottom:8px;opacity:0.5">Before</div>
+              <div style="font-size:0.8rem;opacity:0.3">${ba.name}</div>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="after">
-        <div class="product-placeholder" style="height:100%">
-          <div style="text-align:center">
-            <div style="font-size:2rem;margin-bottom:8px;opacity:0.5">After</div>
-            <div style="font-size:0.8rem;opacity:0.3">${ba.result}</div>
+        <div class="after">
+          <div class="product-placeholder" style="height:100%">
+            <div style="text-align:center">
+              <div style="font-size:2rem;margin-bottom:8px;opacity:0.5">After</div>
+              <div style="font-size:0.8rem;opacity:0.3">${ba.result}</div>
+            </div>
           </div>
         </div>
+        <span class="before-after-label before-label">Before</span>
+        <span class="before-after-label after-label">After</span>
       </div>
-      <span class="before-after-label before-label">Before</span>
-      <span class="before-after-label after-label">After</span>
     </div>
   `).join('');
 }
