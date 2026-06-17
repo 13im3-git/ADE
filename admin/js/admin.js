@@ -8,7 +8,10 @@ const ADMIN_STATE = {
   orders: JSON.parse(localStorage.getItem('adeOrders') || '[]'),
   admins: JSON.parse(localStorage.getItem('adeAdmins') || '[]'),
   isSuperAdmin: false,
-  currentAdmin: null
+  currentAdmin: null,
+  // Sales Control
+  globalSalesEnabled: JSON.parse(localStorage.getItem('adeSalesEnabled') || 'true'),
+  productSales: JSON.parse(localStorage.getItem('adeProductSales') || '{}')
 };
 
 // ===== DOM HELPERS =====
@@ -318,24 +321,79 @@ function closeAdminModal() {
 }
 
 // ===== PRODUCTS =====
+// ===== SALES CONTROL (ADMIN) =====
+function toggleAdminGlobalSales() {
+  ADMIN_STATE.globalSalesEnabled = !ADMIN_STATE.globalSalesEnabled;
+  localStorage.setItem('adeSalesEnabled', JSON.stringify(ADMIN_STATE.globalSalesEnabled));
+  renderProducts();
+  showToast(ADMIN_STATE.globalSalesEnabled ? 'Global Sales ON' : 'Global Sales OFF');
+}
+
+function toggleAdminProductSale(productId) {
+  const current = ADMIN_STATE.productSales[productId];
+  if (current === undefined) ADMIN_STATE.productSales[productId] = false;
+  else if (current === false) ADMIN_STATE.productSales[productId] = true;
+  else delete ADMIN_STATE.productSales[productId];
+  localStorage.setItem('adeProductSales', JSON.stringify(ADMIN_STATE.productSales));
+  renderProducts();
+  const p = (typeof PRODUCTS !== 'undefined' ? PRODUCTS : []).find(x => x.id === productId);
+  const s = ADMIN_STATE.productSales[productId];
+  showToast(`${p?.name||'Product'}: ${s===false?'Sale OFF':s===true?'Sale ON':'Default'}`, 'info');
+}
+
+function getAdminProductPrice(product) {
+  if (!ADMIN_STATE.globalSalesEnabled) return product.originalPrice;
+  const po = ADMIN_STATE.productSales[product.id];
+  if (po === false) return product.originalPrice;
+  if (po === true) return product.salePrice;
+  return product.salePrice || product.originalPrice;
+}
+
+function hasAdminSaleActive(product) {
+  if (!ADMIN_STATE.globalSalesEnabled) return false;
+  const po = ADMIN_STATE.productSales[product.id];
+  if (po === false) return false;
+  if (po === true) return true;
+  return !!(product.salePrice && product.salePrice < product.originalPrice);
+}
+
+// ===== PRODUCTS =====
 function renderProducts() {
   const tbody = document.getElementById('products-table-body');
   if (!tbody) return;
   
-  // Access products from parent window or default data
   let products = [];
   try {
-    if (typeof PRODUCTS !== 'undefined') {
-      products = PRODUCTS;
-    }
+    if (typeof PRODUCTS !== 'undefined') products = PRODUCTS;
   } catch(e) {}
   
   if (products.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:60px;color:var(--gray-500)">Load main site first or add products</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:60px;color:var(--gray-500)">Load main site first or add products</td></tr>';
     return;
   }
   
-  tbody.innerHTML = products.map(p => `
+  // Global sales toggle row
+  const globalToggle = `
+    <tr style="background:rgba(255,105,180,0.05)">
+      <td colspan="6" style="padding:12px 16px;border-bottom:2px solid rgba(255,105,180,0.2)">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+          <span style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--gray-500);font-weight:600">🌙 Global Sales Mode</span>
+          <label class="toggle-switch" style="position:relative;width:48px;height:26px;cursor:pointer;display:inline-block">
+            <input type="checkbox" ${ADMIN_STATE.globalSalesEnabled ? 'checked' : ''} onchange="toggleAdminGlobalSales()" style="opacity:0;width:0;height:0">
+            <span style="position:absolute;inset:0;background:${ADMIN_STATE.globalSalesEnabled ? 'var(--pink-gradient)' : 'var(--gray-300)'};border-radius:999px;transition:var(--transition-fast);box-shadow:${ADMIN_STATE.globalSalesEnabled ? '0 0 15px rgba(255,105,180,0.3)' : 'none'}"></span>
+            <span style="position:absolute;width:20px;height:20px;border-radius:50%;top:3px;left:3px;background:white;transition:var(--transition-fast);transform:translateX(${ADMIN_STATE.globalSalesEnabled ? '22px' : '0'});box-shadow:0 2px 4px rgba(0,0,0,0.2)"></span>
+          </label>
+          <span style="font-size:0.75rem;color:${ADMIN_STATE.globalSalesEnabled ? 'var(--pink)' : 'var(--gray-500)'}">${ADMIN_STATE.globalSalesEnabled ? 'ON — All discounts active' : 'OFF — Original prices shown'}</span>
+        </div>
+      </td>
+    </tr>
+  `;
+  
+  tbody.innerHTML = globalToggle + products.map(p => {
+    const saleActive = hasAdminSaleActive(p);
+    const po = ADMIN_STATE.productSales[p.id];
+    const checked = po === true || (po === undefined && ADMIN_STATE.globalSalesEnabled && p.salePrice && p.salePrice < p.originalPrice);
+    return `
     <tr>
       <td>
         <div style="display:flex;align-items:center;gap:10px">
@@ -348,13 +406,19 @@ function renderProducts() {
       <td>${p.category}</td>
       <td>${formatPrice(p.originalPrice)}</td>
       <td style="color:var(--gold);font-weight:600">${formatPrice(p.salePrice)}</td>
-      <td>${getStatusBadge(p.badge === 'best-seller' ? 'delivered' : p.badge === 'sale' ? 'processing' : 'pending')}</td>
+      <td>
+        <label class="toggle-switch" style="position:relative;width:48px;height:26px;cursor:pointer;display:inline-block">
+          <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleAdminProductSale('${p.id}')" style="opacity:0;width:0;height:0">
+          <span style="position:absolute;inset:0;background:${checked ? 'var(--pink-gradient)' : 'var(--gray-300)'};border-radius:999px;transition:var(--transition-fast);box-shadow:${checked ? '0 0 15px rgba(255,105,180,0.3)' : 'none'}"></span>
+          <span style="position:absolute;width:20px;height:20px;border-radius:50%;top:3px;left:3px;background:white;transition:var(--transition-fast);transform:translateX(${checked ? '22px' : '0'});box-shadow:0 2px 4px rgba(0,0,0,0.2)"></span>
+        </label>
+      </td>
       <td>
         <button class="btn btn-ghost btn-sm" onclick="showToast('Edit product - Coming soon')"><i class="fas fa-edit"></i></button>
         <button class="btn btn-danger btn-sm" onclick="showToast('Delete product - Coming soon')"><i class="fas fa-trash"></i></button>
       </td>
     </tr>
-  `).join('');
+  `}).join('');
 }
 
 // ===== CUSTOMERS =====
