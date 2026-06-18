@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Registration - ADE Natural Cereals</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌾</text></svg>">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <style>
+    .register-wrapper {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      position: relative;
+      overflow: hidden;
+      padding: 20px;
+    }
+    .register-wrapper::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(255, 105, 180, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(212, 175, 55, 0.06) 0%, transparent 40%),
+        radial-gradient(ellipse at 50% 80%, rgba(255, 105, 180, 0.05) 0%, transparent 40%);
+      pointer-events: none;
+    }
+    .register-card {
+      background: rgba(10, 10, 10, 0.9);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 105, 180, 0.2);
+      border-radius: 24px;
+      padding: 48px;
+      width: 100%;
+      max-width: 480px;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 60px rgba(255, 105, 180, 0.06);
+    }
+    .register-logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .register-logo-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #D4AF37, #F0D68A, #D4AF37);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      margin: 0 auto 16px;
+      box-shadow: 0 0 50px rgba(212, 175, 55, 0.25);
+    }
+    .register-logo h1 {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      background: var(--gold-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 3px;
+      margin-bottom: 4px;
+    }
+    .register-logo p {
+      color: var(--gray-500);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .form-group { margin-bottom: 20px; }
+    .form-label {
+      display: block;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--gray-500);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    .form-input, .form-select {
+      width: 100%;
+      padding: 14px 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      color: var(--white);
+      font-size: 0.9rem;
+      transition: var(--transition-fast);
+      appearance: none;
+    }
+    .form-input:focus, .form-select:focus {
+      outline: none;
+      border-color: var(--pink);
+      box-shadow: 0 0 0 3px rgba(255,105,180,0.1);
+      background: rgba(255,255,255,0.06);
+    }
+    .form-select option {
+      background: var(--black-card);
+      color: var(--white);
+    }
+    .btn-register {
+      width: 100%;
+      padding: 14px;
+      background: var(--gold-gradient);
+      color: var(--black);
+      font-weight: 700;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      border-radius: 9999px;
+      margin-top: 8px;
+      transition: var(--transition-smooth);
+      box-shadow: var(--gold-glow);
+    }
+    .btn-register:hover {
+      box-shadow: 0 0 60px rgba(212,175,55,0.5);
+      transform: translateY(-2px);
+    }
+    .register-back {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .register-back a {
+      color: var(--gray-500);
+      font-size: 0.85rem;
+      transition: var(--transition-fast);
+    }
+    .register-back a:hover { color: var(--pink); }
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+    }
+  </style>
+</head>
+<body>
+  <div class="register-wrapper">
+    <div class="register-card">
+      <div class="register-logo">
+        <div class="register-logo-icon">🌾</div>
+        <h1>ADE NATURAL CEREALS</h1>
+        <p>Admin Registration</p>
+      </div>
+      
+      <form id="registerForm" onsubmit="handleRegister(event)">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" class="form-input" id="reg-name" placeholder="Enter full name" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Gmail Address</label>
+          <input type="email" class="form-input" id="reg-email" placeholder="example@gmail.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" class="form-input" id="reg-password" placeholder="Create password" required minlength="4">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Role</label>
+            <select class="form-select" id="reg-role">
+              <option value="admin">Admin</option>
+              <option value="superadmin">Super Admin</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select class="form-select" id="reg-status">
+              <option value="active">Active</option>
+              <option value="suspended">Suspended</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn-register">
+          <i class="fas fa-user-plus"></i> Register Admin
+        </button>
+      </form>
+      
+      <div class="register-back">
+        <a href="login.html"><i class="fas fa-arrow-left"></i> Back to Login</a>
+      </div>
+    </div>
+  </div>
+  
+  <div class="toast-container" id="toast-container"></div>
+  
+  <script>
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i><span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(120%)';
+        toast.style.transition = 'all 0.35s ease';
+        setTimeout(() => toast.remove(), 350);
+      }, 3500);
+    }
+    
+    function handleRegister(event) {
+      event.preventDefault();
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value.trim();
+      const role = document.getElementById('reg-role').value;
+      const status = document.getElementById('reg-status').value;
+      
+      if (!name || !email || !password) {
+        showToast('Please fill in all fields', 'error');
+        return;
+      }
+      
+      if (!email.includes('@gmail.com')) {
+        showToast('Only Gmail addresses are allowed', 'error');
+        return;
+      }
+      
+      const admins = JSON.parse(localStorage.getItem('adeAdmins') || '[]');
+      
+      // Check if email already exists
+      if (admins.find(a => a.email === email)) {
+        showToast('An admin with this email already exists', 'error');
+        return;
+      }
+      
+      // Add new admin
+      admins.push({
+        email: email,
+        name: name,
+        role: role,
+        status: status
+      });
+      
+      localStorage.setItem('adeAdmins', JSON.stringify(admins));
+      localStorage.setItem('adeAdminPass_' + email, password);
+      
+      showToast('Admin registered successfully!', 'success');
+      setTimeout(() => {
+        window.location.href = 'login.html';
+      }, 1200);
+    }
+  </script>
+</body>
+</html>
