@@ -339,7 +339,7 @@ function renderProductDetail(productId) {
         <p class="product-detail-description">${product.description}</p>
         
         ${product.sku ? `<div style="margin-bottom:16px;display:flex;align-items:center;gap:8px;font-size:0.75rem;color:var(--gray-500)"><i class="fas fa-barcode"></i> SKU: <strong style="color:var(--white)">${product.sku}</strong></div>` : ''}
-        ${product.weight ? `<div style="margin-bottom:24px;display:flex;align-items:center;gap:8px;font-size:0.85rem;color:var(--gray-500)"><i class="fas fa-weight-hanging"></i> <span>${product.weight}</span></div>` : ''}
+         ${product.weight ? `<div style="margin-bottom:16px;display:flex;align-items:center;gap:8px;font-size:0.85rem;color:var(--gray-500)"><i class="fas fa-weight-hanging"></i> <span>${product.weight}</span></div>` : ''}
         
         <div style="margin-bottom:24px">
           <h4 style="font-family:var(--font-sans);font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;color:var(--gray-500);margin-bottom:12px">Benefits</h4>
