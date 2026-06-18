@@ -230,7 +230,7 @@
         showToast('An admin with this email already exists', 'error');
         return;
       }
-      if (role === 'superadmin' && admins.some(a => a.role === 'superadmin')) {
+      if (role === 'superadmin' && admins.some(a => a.role === 'superadmin' && a.status === 'active')) {
         showToast('Only one super admin allowed', 'error');
         return;
       }

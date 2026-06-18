@@ -629,7 +629,7 @@ function addAdmin() {
     showToast('Admin already exists', 'error');
     return;
   }
-  if (role === 'superadmin' && ADMIN_STATE.admins.some(a => a.role === 'superadmin')) {
+  if (role === 'superadmin' && ADMIN_STATE.admins.some(a => a.role === 'superadmin' && a.status === 'active')) {
     showToast('Only one super admin allowed', 'error');
     return;
   }
