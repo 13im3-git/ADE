@@ -112,12 +112,8 @@ function updateAdminUI() {
   
   const settingsNav = document.querySelector('a[data-tab="settings"]');
   const settingsBtn = document.querySelector('button[data-tab="settings"]');
-  const analyticsNav = document.querySelector('a[data-tab="analytics"]');
-  const analyticsBtn = document.querySelector('button[data-tab="analytics"]');
   if (settingsNav) settingsNav.style.display = isSuperAdmin ? '' : 'none';
   if (settingsBtn) settingsBtn.style.display = isSuperAdmin ? '' : 'none';
-  if (analyticsNav) analyticsNav.style.display = isSuperAdmin ? '' : 'none';
-  if (analyticsBtn) analyticsBtn.style.display = isSuperAdmin ? '' : 'none';
 }
 
 function initAdmin() {
@@ -1117,15 +1113,6 @@ function renderAnalytics() {
   const container = document.getElementById('tab-analytics');
   if (!container) return;
 
-  if (!ADMIN_STATE.isSuperAdmin) {
-    container.innerHTML = `
-      <div class="glass-card" style="text-align:center;padding:60px">
-        <i class="fas fa-lock" style="font-size:3rem;color:var(--gray-500);margin-bottom:16px;display:block"></i>
-        <h3 style="font-family:var(--font-sans);color:var(--gray-500);font-size:1rem">Analytics restricted to Super Admin</h3>
-      </div>
-    `;
-    return;
-  }
   const rangeVal = parseInt(document.getElementById('analytics-range')?.value || '30', 10);
   const now = Date.now();
   const cutoff = now - rangeVal * 24 * 60 * 60 * 1000;
