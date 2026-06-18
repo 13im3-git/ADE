@@ -26,9 +26,9 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer((req, res) => {
-  if (req.url === '/health' || req.url === '/healthz') {
+  if (req.url === '/healthz') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'ok', uptime: process.uptime() }));
+    res.end(JSON.stringify({ ok: true, ts: Date.now() }));
     return;
   }
   let filePath = '.' + (req.url === '/' ? '/index.html' : req.url);
