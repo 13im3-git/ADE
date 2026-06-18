@@ -77,6 +77,9 @@
         <a href="#" class="active" data-tab="dashboard" onclick="switchTab('dashboard')">
           <i class="fas fa-chart-pie"></i> Dashboard
         </a>
+        <a href="#" data-tab="analytics" onclick="switchTab('analytics')">
+          <i class="fas fa-chart-line"></i> Analytics
+        </a>
         <a href="#" data-tab="orders" onclick="switchTab('orders')">
           <i class="fas fa-shopping-cart"></i> Orders
         </a>
@@ -116,6 +119,9 @@
       <div class="tabs">
         <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">
           <i class="fas fa-chart-pie"></i> Dashboard
+        </button>
+        <button class="tab-btn" data-tab="analytics" onclick="switchTab('analytics')">
+          <i class="fas fa-chart-line"></i> Analytics
         </button>
         <button class="tab-btn" data-tab="orders" onclick="switchTab('orders')">
           <i class="fas fa-shopping-cart"></i> Orders
@@ -182,6 +188,67 @@
             </thead>
             <tbody id="recent-orders"></tbody>
           </table>
+        </div>
+      </div>
+      
+      <!-- Tab: Analytics -->
+      <div class="tab-content" id="tab-analytics">
+        <div class="glass-card" style="margin-bottom:24px">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:24px">
+            <h3>Revenue Analytics</h3>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <select class="form-select" id="analytics-range" onchange="renderAnalytics()" style="width:auto;padding:8px 12px;font-size:0.8rem">
+                <option value="7">Last 7 days</option>
+                <option value="30" selected>Last 30 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="365">Last 12 months</option>
+              </select>
+              <button class="btn btn-gold btn-sm" onclick="exportAnalyticsCSV()"><i class="fas fa-download"></i> Export CSV</button>
+              <button class="btn btn-ghost btn-sm" onclick="exportAnalyticsJSON()"><i class="fas fa-code"></i> Export JSON</button>
+            </div>
+          </div>
+          
+          <div class="stats-grid" id="analytics-stats">
+            <div class="stat-card">
+              <div class="stat-header"><i class="fas fa-coins"></i></div>
+              <div class="stat-number" id="analytics-revenue">₦0</div>
+              <div class="stat-label">Total Revenue</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-header"><i class="fas fa-shopping-bag"></i></div>
+              <div class="stat-number" id="analytics-orders">0</div>
+              <div class="stat-label">Total Orders</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-header"><i class="fas fa-receipt"></i></div>
+              <div class="stat-number" id="analytics-avg">₦0</div>
+              <div class="stat-label">Avg Order Value</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-header"><i class="fas fa-users"></i></div>
+              <div class="stat-number" id="analytics-customers">0</div>
+              <div class="stat-label">Unique Customers</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="glass-card" style="margin-bottom:24px">
+          <h3 style="margin-bottom:16px">Revenue Trend</h3>
+          <div id="analytics-chart" style="height:220px;display:flex;align-items:flex-end;gap:4px;padding:8px 0;overflow-x:auto"></div>
+          <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--gray-500);margin-top:8px">
+            <span>Start</span><span>End</span>
+          </div>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px" class="analytics-grid">
+          <div class="glass-card">
+            <h3 style="margin-bottom:16px">Top Categories</h3>
+            <div id="analytics-categories"></div>
+          </div>
+          <div class="glass-card">
+            <h3 style="margin-bottom:16px">Recent Transactions</h3>
+            <div id="analytics-recent" style="max-height:320px;overflow-y:auto"></div>
+          </div>
         </div>
       </div>
       
