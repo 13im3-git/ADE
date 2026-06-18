@@ -262,6 +262,7 @@ function renderProductCard(product) {
         <div class="product-rating">
           <i class="fas fa-star"></i> ${product.rating} <span>(${product.reviews})</span>
         </div>
+        ${product.weight ? `<div style="font-size:0.7rem;color:var(--gray-500);margin-bottom:6px"><i class="fas fa-weight-hanging"></i> ${product.weight}</div>` : ''}
         <div class="product-price">
           ${hasSale 
             ? `<span class="price-current">${formatPrice(effectivePrice)}</span><span class="price-original">${formatPrice(product.originalPrice)}</span><span class="discount-badge-text">-${getDiscountPercent(product.originalPrice, effectivePrice)}%</span>`

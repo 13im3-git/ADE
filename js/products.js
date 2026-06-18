@@ -21,7 +21,7 @@ const PRODUCTS = [
     reviews: 128,
     badge: 'sale',
     description: 'Our premium protein powder formulated for healthy weight gain. Packed with essential nutrients and vitamins to support your weight gain journey naturally.',
-    benefits: ['Natural ingredients', 'Rich in protein', 'Easy to digest', 'No artificial additives']
+    features: ['Natural ingredients', 'Rich in protein', 'Easy to digest', 'No artificial additives']
   },
   {
     id: 'wg-2',
@@ -39,7 +39,7 @@ const PRODUCTS = [
     reviews: 95,
     badge: 'best-seller',
     description: 'Large size premium protein powder for sustained weight gain results. Perfect for long-term use.',
-    benefits: ['Extended supply', 'Better value', 'Premium formula', 'Max results']
+    features: ['Extended supply', 'Better value', 'Premium formula', 'Max results']
   },
   {
     id: 'wg-3',
@@ -57,7 +57,7 @@ const PRODUCTS = [
     reviews: 210,
     badge: 'sale',
     description: 'Delicious weight gain syrup that helps you add healthy pounds. Easy to take and fast-acting.',
-    benefits: ['Great taste', 'Fast absorption', 'Natural formula', 'Energy boosting']
+    features: ['Great taste', 'Fast absorption', 'Natural formula', 'Energy boosting']
   },
   {
     id: 'wg-4',
@@ -75,7 +75,7 @@ const PRODUCTS = [
     reviews: 67,
     badge: 'sale',
     description: 'Convenient weight gain pills for those on the go. Easy to incorporate into your daily routine.',
-    benefits: ['Easy to swallow', 'Portable', 'Consistent dosage', 'Natural ingredients']
+    features: ['Easy to swallow', 'Portable', 'Consistent dosage', 'Natural ingredients']
   },
 
   // --- HIPS AND BUTT ---
@@ -95,7 +95,7 @@ const PRODUCTS = [
     reviews: 345,
     badge: 'best-seller',
     description: 'Our most popular product! Specially formulated to enhance your curves naturally.',
-    benefits: ['Natural enhancement', 'Visible results', 'Safe formula', 'Curve boosting']
+    features: ['Natural enhancement', 'Visible results', 'Safe formula', 'Curve boosting']
   },
   {
     id: 'hb-2',
@@ -113,7 +113,7 @@ const PRODUCTS = [
     reviews: 89,
     badge: 'sale',
     description: 'Premium powder formula for hip and butt enhancement. Start your transformation today.',
-    benefits: ['Easy mix', 'Quick results', 'Natural', 'Affordable']
+    features: ['Easy mix', 'Quick results', 'Natural', 'Affordable']
   },
   {
     id: 'hb-3',
@@ -131,7 +131,7 @@ const PRODUCTS = [
     reviews: 156,
     badge: 'sale',
     description: 'Large size butt and hips powder for complete transformation. Our best value option.',
-    benefits: ['Extended use', 'Best value', 'Proven formula', 'Maximum results']
+    features: ['Extended use', 'Best value', 'Proven formula', 'Maximum results']
   },
   {
     id: 'hb-4',
@@ -149,7 +149,7 @@ const PRODUCTS = [
     reviews: 178,
     badge: 'sale',
     description: 'Nourishing oil for hip and butt enhancement. Massage daily for best results.',
-    benefits: ['Deep penetration', 'Skin nourishing', 'Natural oils', 'Firming']
+    features: ['Deep penetration', 'Skin nourishing', 'Natural oils', 'Firming']
   },
   {
     id: 'hb-5',
@@ -167,7 +167,7 @@ const PRODUCTS = [
     reviews: 54,
     badge: 'sale',
     description: 'Convenient pills for hip and butt enhancement on the go.',
-    benefits: ['Easy to take', 'Portable', 'Natural formula', 'Consistent']
+    features: ['Easy to take', 'Portable', 'Natural formula', 'Consistent']
   },
   {
     id: 'hb-6',
@@ -185,7 +185,7 @@ const PRODUCTS = [
     reviews: 267,
     badge: 'best-seller',
     description: 'Premium booty filler cream for targeted enhancement. Visible results in weeks.',
-    benefits: ['Targeted action', 'Quick results', 'Premium formula', 'Easy application']
+    features: ['Targeted action', 'Quick results', 'Premium formula', 'Easy application']
   },
   {
     id: 'hb-7',
@@ -203,7 +203,7 @@ const PRODUCTS = [
     reviews: 198,
     badge: 'sale',
     description: 'Medium size booty filler cream for complete treatment. Our most popular size.',
-    benefits: ['Best value', 'Premium quality', 'Long lasting', 'Proven results']
+    features: ['Best value', 'Premium quality', 'Long lasting', 'Proven results']
   },
   {
     id: 'hb-8',
@@ -221,7 +221,7 @@ const PRODUCTS = [
     reviews: 312,
     badge: 'best-seller',
     description: 'Large 500ml booty filler cream for maximum enhancement. Professional size.',
-    benefits: ['Professional size', 'Maximum value', 'Intensive formula', 'Guaranteed results']
+    features: ['Professional size', 'Maximum value', 'Intensive formula', 'Guaranteed results']
   },
   {
     id: 'hb-9',
@@ -239,7 +239,7 @@ const PRODUCTS = [
     reviews: 445,
     badge: 'best-seller',
     description: 'Ultimate 1 litre booty filler cream. Our largest size for complete transformation.',
-    benefits: ['Ultimate value', 'Full treatment', 'Professional grade', 'Best results']
+    features: ['Ultimate value', 'Full treatment', 'Professional grade', 'Best results']
   },
 
   // --- SLIMTHICK ---
@@ -259,7 +259,7 @@ const PRODUCTS = [
     reviews: 234,
     badge: 'best-seller',
     description: 'Achieve the perfect slimthick body with our premium formula. Slim waist, enhanced curves.',
-    benefits: ['Waist slimming', 'Curve enhancing', 'Natural formula', 'Fast acting']
+    features: ['Waist slimming', 'Curve enhancing', 'Natural formula', 'Fast acting']
   },
   {
     id: 'st-2',
@@ -277,7 +277,7 @@ const PRODUCTS = [
     reviews: 87,
     badge: 'sale',
     description: 'Convenient slimthick pills for your body transformation journey.',
-    benefits: ['Easy to take', 'Portable', 'Effective', 'Natural']
+    features: ['Easy to take', 'Portable', 'Effective', 'Natural']
   },
 
   // --- FLAT TUMMY ---
@@ -297,7 +297,7 @@ const PRODUCTS = [
     reviews: 145,
     badge: 'sale',
     description: 'Achieve a flatter tummy with our specially formulated powder. Reduces bloating naturally.',
-    benefits: ['Belly fat reduction', 'Natural ingredients', 'Easy to use', 'Quick results']
+    features: ['Belly fat reduction', 'Natural ingredients', 'Easy to use', 'Quick results']
   },
   {
     id: 'ft-2',
@@ -315,7 +315,7 @@ const PRODUCTS = [
     reviews: 98,
     badge: 'sale',
     description: 'Refreshing flat tummy drink for daily detox and belly slimming.',
-    benefits: ['Detoxifying', 'Refreshing taste', 'Belly slimming', 'Daily wellness']
+    features: ['Detoxifying', 'Refreshing taste', 'Belly slimming', 'Daily wellness']
   },
   {
     id: 'ft-3',
@@ -333,7 +333,7 @@ const PRODUCTS = [
     reviews: 112,
     badge: 'sale',
     description: 'Targeted tummy oil for spot reduction and firming. Massage daily.',
-    benefits: ['Spot reduction', 'Skin firming', 'Natural oils', 'Warm massage']
+    features: ['Spot reduction', 'Skin firming', 'Natural oils', 'Warm massage']
   },
   {
     id: 'ft-4',
@@ -351,7 +351,7 @@ const PRODUCTS = [
     reviews: 76,
     badge: 'new',
     description: 'Professional tummy wrap for instant slimming and detox.',
-    benefits: ['Instant results', 'Detoxifying', 'Easy to use', 'Reusable']
+    features: ['Instant results', 'Detoxifying', 'Easy to use', 'Reusable']
   },
   {
     id: 'ft-5',
@@ -369,7 +369,7 @@ const PRODUCTS = [
     reviews: 89,
     badge: 'sale',
     description: 'Effective weight loss powder to support your fitness goals.',
-    benefits: ['Weight management', 'Metabolism boost', 'Natural formula', 'Energy support']
+    features: ['Weight management', 'Metabolism boost', 'Natural formula', 'Energy support']
   },
 
   // --- BREAST KIT ---
@@ -389,7 +389,7 @@ const PRODUCTS = [
     reviews: 234,
     badge: 'best-seller',
     description: 'Natural breast enlargement syrup for fuller, firmer breasts. Visible results in weeks.',
-    benefits: ['Natural enhancement', 'Fuller breasts', 'Firmer bust', 'Safe formula']
+    features: ['Natural enhancement', 'Fuller breasts', 'Firmer bust', 'Safe formula']
   },
   {
     id: 'bk-2',
@@ -407,7 +407,7 @@ const PRODUCTS = [
     reviews: 87,
     badge: 'sale',
     description: 'Premium breast enlargement powder for natural bust enhancement.',
-    benefits: ['Easy mix', 'Natural results', 'Affordable', 'Safe']
+    features: ['Easy mix', 'Natural results', 'Affordable', 'Safe']
   },
   {
     id: 'bk-3',
@@ -425,7 +425,7 @@ const PRODUCTS = [
     reviews: 167,
     badge: 'sale',
     description: 'Nourishing oil for breast enlargement. Massage daily for best results.',
-    benefits: ['Deep penetration', 'Natural oils', 'Skin firming', 'Quick absorption']
+    features: ['Deep penetration', 'Natural oils', 'Skin firming', 'Quick absorption']
   },
   {
     id: 'bk-4',
@@ -443,7 +443,7 @@ const PRODUCTS = [
     reviews: 92,
     badge: 'sale',
     description: 'Firming oil that lifts and tones your bust naturally.',
-    benefits: ['Lifting effect', 'Toning', 'Natural firmness', 'Youthful look']
+    features: ['Lifting effect', 'Toning', 'Natural firmness', 'Youthful look']
   },
   {
     id: 'bk-5',
@@ -461,7 +461,7 @@ const PRODUCTS = [
     reviews: 64,
     badge: 'sale',
     description: 'Powder formula for breast firming and lifting.',
-    benefits: ['Natural lift', 'Easy to use', 'Firming', 'Safe']
+    features: ['Natural lift', 'Easy to use', 'Firming', 'Safe']
   },
 
   // --- OTHER PRODUCTS ---
@@ -481,7 +481,7 @@ const PRODUCTS = [
     reviews: 45,
     badge: 'new',
     description: 'Special oil for slimming legs naturally. Targeted formula.',
-    benefits: ['Leg slimming', 'Natural formula', 'Quick results', 'Easy application']
+    features: ['Leg slimming', 'Natural formula', 'Quick results', 'Easy application']
   },
   {
     id: 'op-2',
@@ -499,7 +499,7 @@ const PRODUCTS = [
     reviews: 198,
     badge: 'best-seller',
     description: 'Powerful herbal detox for internal cleansing and infection treatment.',
-    benefits: ['Detoxifying', 'Natural herbs', 'Internal cleansing', 'Immune support']
+    features: ['Detoxifying', 'Natural herbs', 'Internal cleansing', 'Immune support']
   },
   {
     id: 'op-3',
@@ -517,7 +517,7 @@ const PRODUCTS = [
     reviews: 134,
     badge: 'sale',
     description: 'Natural yoni oil for feminine wellness and intimate care.',
-    benefits: ['Feminine care', 'Natural ingredients', 'Gentle formula', 'Wellness']
+    features: ['Feminine care', 'Natural ingredients', 'Gentle formula', 'Wellness']
   },
   {
     id: 'op-4',
@@ -535,7 +535,7 @@ const PRODUCTS = [
     reviews: 212,
     badge: 'best-seller',
     description: 'Premium hair growth oil for longer, thicker, healthier hair.',
-    benefits: ['Hair growth', 'Thicker hair', 'Natural oils', 'Scalp health']
+    features: ['Hair growth', 'Thicker hair', 'Natural oils', 'Scalp health']
   },
 
   // --- COMPLETE SETS ---
@@ -555,7 +555,7 @@ const PRODUCTS = [
     reviews: 178,
     badge: 'sale',
     description: 'Complete weight gain kit for students. Everything you need in one package.',
-    benefits: ['Complete kit', 'Student friendly', 'Best value', 'All-in-one']
+    features: ['Complete kit', 'Student friendly', 'Best value', 'All-in-one']
   },
   {
     id: 'cs-2',
@@ -573,7 +573,7 @@ const PRODUCTS = [
     reviews: 267,
     badge: 'best-seller',
     description: 'Ultimate curve booster set for complete body transformation.',
-    benefits: ['Full transformation', 'Premium products', 'Maximum results', 'Best seller']
+    features: ['Full transformation', 'Premium products', 'Maximum results', 'Best seller']
   },
   {
     id: 'cs-3',
@@ -591,7 +591,7 @@ const PRODUCTS = [
     reviews: 145,
     badge: 'sale',
     description: 'Complete weight gain set for serious results. Our best weight gain package.',
-    benefits: ['Serious results', 'Complete package', 'Great value', 'All products']
+    features: ['Serious results', 'Complete package', 'Great value', 'All products']
   },
   {
     id: 'cs-4',
@@ -609,7 +609,7 @@ const PRODUCTS = [
     reviews: 389,
     badge: 'best-seller',
     description: 'Premium slimthick set for achieving the perfect hourglass figure.',
-    benefits: ['Hourglass figure', 'Premium set', 'Best value', 'Proven results']
+    features: ['Hourglass figure', 'Premium set', 'Best value', 'Proven results']
   },
   {
     id: 'cs-5',
@@ -627,7 +627,7 @@ const PRODUCTS = [
     reviews: 98,
     badge: 'sale',
     description: 'Complete breast enlargement set for natural bust enhancement.',
-    benefits: ['Bust enhancement', 'Complete set', 'Natural results', 'Great value']
+    features: ['Bust enhancement', 'Complete set', 'Natural results', 'Great value']
   },
   {
     id: 'cs-6',
@@ -645,7 +645,7 @@ const PRODUCTS = [
     reviews: 67,
     badge: 'sale',
     description: 'Breast firming set for lifted, toned, and youthful bust.',
-    benefits: ['Lifting', 'Firming', 'Toning', 'Natural']
+    features: ['Lifting', 'Firming', 'Toning', 'Natural']
   },
   {
     id: 'cs-7',
@@ -663,7 +663,7 @@ const PRODUCTS = [
     reviews: 123,
     badge: 'sale',
     description: 'Complete flat tummy set for belly fat reduction and core toning.',
-    benefits: ['Belly reduction', 'Core toning', 'Complete set', 'Effective']
+    features: ['Belly reduction', 'Core toning', 'Complete set', 'Effective']
   }
 ];
 
