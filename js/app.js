@@ -23,8 +23,37 @@ const STATE = {
   // Sales Toggle
   salesEnabled: JSON.parse(localStorage.getItem('adeSalesEnabled') || 'true'),
   productSales: JSON.parse(localStorage.getItem('adeProductSales') || '{}'),
-  currentFilter: null
+  currentFilter: null,
+  contactSettings: null
 };
+
+function getContactSettings() {
+  if (STATE.contactSettings) return STATE.contactSettings;
+  const defaults = {
+    email: 'hello@adenaturalcereals.com',
+    whatsapp: '2348012345678',
+    phone: '2348012345678',
+    address: 'Lagos, Nigeria',
+    bankName: 'GTBank',
+    accountName: 'ADE Natural Cereals',
+    accountNumber: '0123 456 7890',
+    instagram: '',
+    facebook: '',
+    twitter: '',
+    tiktok: '',
+    instagram: 'https://instagram.com/adenaturalcereals',
+    facebook: 'https://facebook.com/adenaturalcereals',
+    twitter: 'https://x.com/adenaturalcereals',
+    tiktok: 'https://tiktok.com/@adenaturalcereals'
+  };
+  try {
+    const stored = JSON.parse(localStorage.getItem('adeSettings') || '{}');
+    STATE.contactSettings = { ...defaults, ...stored };
+  } catch(e) {
+    STATE.contactSettings = defaults;
+  }
+  return STATE.contactSettings;
+}
 
 // ===== DOM REFERENCES =====
 const $ = (sel) => document.querySelector(sel);
@@ -37,6 +66,30 @@ function formatPrice(price) {
 
 function getDiscountPercent(original, sale) {
   return Math.round(((original - sale) / original) * 100);
+}
+
+function getProductImage(product) {
+  if (!product) return '';
+  if (product.featuredImage) return product.featuredImage;
+  if (product.images && product.images.length > 0) return product.images[0];
+  return product.image || '';
+}
+
+function isSaleDateActive(product) {
+  if (!product.saleStart && !product.saleEnd) return true;
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  if (product.saleStart && today < product.saleStart) return false;
+  if (product.saleEnd && today > product.saleEnd) return false;
+  return true;
+}
+
+function getEffectiveProductPrice(product) {
+  if (!STATE.salesEnabled) return product.originalPrice;
+  if (product.salePrice && product.salePrice < product.originalPrice && isSaleDateActive(product)) {
+    return product.salePrice;
+  }
+  return product.originalPrice;
 }
 
 function generateOrderNumber() {
@@ -192,16 +245,16 @@ function renderBestSellers() {
 }
 
 function renderProductCard(product) {
-  const hasSale = product.salePrice && product.salePrice < product.originalPrice;
-  const currentPrice = hasSale ? product.salePrice : product.originalPrice;
+  const effectivePrice = getEffectiveProductPrice(product);
+  const hasSale = effectivePrice < product.originalPrice;
 
   return `
     <div class="product-card fade-up">
       <span class="product-badge ${hasSale ? 'badge-sale' : product.badge === 'best-seller' ? 'badge-best-seller' : 'badge-new'}">
-        ${hasSale ? `-${getDiscountPercent(product.originalPrice, product.salePrice)}%` : product.badge === 'best-seller' ? 'Best Seller' : product.badge === 'new' ? 'New' : product.badge || ''}
+        ${hasSale ? `-${getDiscountPercent(product.originalPrice, effectivePrice)}%` : product.badge === 'best-seller' ? 'Best Seller' : product.badge === 'new' ? 'New' : product.badge || ''}
       </span>
       <div class="product-img" onclick="navigateTo('product', '${product.id}')">
-        <img src="${product.image}" alt="${product.name}">
+        <img src="${getProductImage(product)}" alt="${product.name}">
       </div>
       <div class="product-body">
         <span class="product-category">${product.category}</span>
@@ -211,8 +264,8 @@ function renderProductCard(product) {
         </div>
         <div class="product-price">
           ${hasSale 
-            ? `<span class="price-current">${formatPrice(product.salePrice)}</span><span class="price-original">${formatPrice(product.originalPrice)}</span><span class="discount-badge-text">-${getDiscountPercent(product.originalPrice, product.salePrice)}%</span>`
-            : `<span class="price-current">${formatPrice(currentPrice)}</span>`
+            ? `<span class="price-current">${formatPrice(effectivePrice)}</span><span class="price-original">${formatPrice(product.originalPrice)}</span><span class="discount-badge-text">-${getDiscountPercent(product.originalPrice, effectivePrice)}%</span>`
+            : `<span class="price-current">${formatPrice(effectivePrice)}</span>`
           }
         </div>
         <div class="product-actions">
@@ -320,10 +373,17 @@ function renderProductDetail(productId) {
   const container = document.getElementById('product-detail-container');
   if (!container) return;
   
-  container.innerHTML = `
+    container.innerHTML = `
     <div class="product-detail-grid">
-      <div class="product-detail-image fade-in">
-        <img src="${product.image}" alt="${product.name}">
+      <div>
+        <div class="product-detail-image fade-in">
+          <img src="${getProductImage(product)}" alt="${product.name}" id="detail-main-image">
+        </div>
+        ${(product.images && product.images.length > 1) ? `
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap" id="gallery-thumbs">
+          ${product.images.map((img, i) => `<img src="${img}" class="gallery-thumb" data-src="${img}" onclick="switchDetailImage('${img}')" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:2px solid ${i === 0 ? 'var(--pink)' : 'var(--glass-border)'};cursor:pointer;transition:var(--transition-fast)">`).join('')}
+        </div>
+        ` : ''}
       </div>
       <div class="product-detail-info fade-up">
         <span class="category-tag">${product.category}</span>
@@ -333,8 +393,7 @@ function renderProductDetail(productId) {
           <span class="rating-count">(${product.reviews} reviews)</span>
         </div>
         <div class="product-detail-price">
-          <span class="current-price" style="font-size:2rem">${formatPrice(product.salePrice && product.salePrice < product.originalPrice ? product.salePrice : product.originalPrice)}</span>
-          ${product.salePrice && product.salePrice < product.originalPrice ? `<span class="original-price" style="font-size:1rem">${formatPrice(product.originalPrice)}</span><span class="discount" style="margin-left:8px">-${getDiscountPercent(product.originalPrice, product.salePrice)}%</span>` : ''}
+          ${(() => { const ep = getEffectiveProductPrice(product); return ep < product.originalPrice ? `<span class="current-price" style="font-size:2rem">${formatPrice(ep)}</span><span class="original-price" style="font-size:1rem">${formatPrice(product.originalPrice)}</span><span class="discount" style="margin-left:8px">-${getDiscountPercent(product.originalPrice, ep)}%</span>` : `<span class="current-price" style="font-size:2rem">${formatPrice(product.originalPrice)}</span>`; })()}
         </div>
         <p class="product-detail-description">${product.description}</p>
         
@@ -403,6 +462,14 @@ function changeDetailQty(change) {
   if (el) el.textContent = detailQty;
 }
 
+function switchDetailImage(src) {
+  const mainImg = document.querySelector('.product-detail-image img');
+  if (mainImg) mainImg.src = src;
+  document.querySelectorAll('.gallery-thumb').forEach(t => {
+    t.style.borderColor = t.dataset.src === src ? 'var(--pink)' : 'var(--glass-border)';
+  });
+}
+
 function addToCartFromDetail() {
   if (STATE.currentProduct) {
     addToCart(STATE.currentProduct.id, detailQty);
@@ -427,7 +494,7 @@ function addToCart(productId, quantity = 1) {
   const product = PRODUCTS.find(p => p.id === productId);
   if (!product) return;
   
-  const price = product.salePrice && product.salePrice < product.originalPrice ? product.salePrice : product.originalPrice;
+  const price = getEffectiveProductPrice(product);
   const existing = STATE.cart.find(item => item.id === productId);
   if (existing) {
     existing.quantity += quantity;
@@ -437,7 +504,7 @@ function addToCart(productId, quantity = 1) {
       name: product.name,
       price: price,
       originalPrice: product.originalPrice,
-      image: product.image,
+      image: getProductImage(product),
       quantity: quantity
     });
   }
@@ -601,13 +668,14 @@ function updateCheckoutView() {
   }
   
   if (STATE.checkoutStep === 2) {
+    const cs = getContactSettings();
     const total = getCartTotal();
     html += `<h3 class="checkout-form-title">Payment — Bank Transfer</h3>
       <p style="text-align:center;color:var(--gray-500);margin-bottom:24px">Transfer the total to the account below</p>
       <div class="checkout-summary">
-        <div class="checkout-summary-item"><span>Bank</span><span>GTBank</span></div>
-        <div class="checkout-summary-item"><span>Account Name</span><span>ADE Natural Cereals</span></div>
-        <div class="checkout-summary-item"><span>Account Number</span><span style="font-size:1.2rem;letter-spacing:2px;color:var(--gold);font-weight:700">0123 456 7890</span></div>
+        <div class="checkout-summary-item"><span>Bank</span><span>${cs.bankName}</span></div>
+        <div class="checkout-summary-item"><span>Account Name</span><span>${cs.accountName}</span></div>
+        <div class="checkout-summary-item"><span>Account Number</span><span style="font-size:1.2rem;letter-spacing:2px;color:var(--gold);font-weight:700">${cs.accountNumber}</span></div>
         <div class="checkout-summary-total"><span>Amount to Pay</span><span class="amount">${formatPrice(total)}</span></div>
       </div>
       <button class="btn btn-primary btn-lg" style="width:100%;margin-top:16px" onclick="checkoutStep2()">I've Made the Transfer <i class="fas fa-arrow-right"></i></button>`;
@@ -713,7 +781,7 @@ function checkoutStep3() {
 }
 
 function sendOrderToWhatsApp(order) {
-  const phoneNumber = '2348012345678';
+  const phoneNumber = getContactSettings().whatsapp;
   let msg = `🧾 *NEW ORDER - ADE*\n📋 *Order:* ${order.orderNumber}\n📅 *Date:* ${new Date(order.date).toLocaleDateString()}\n\n👤 *Customer:*\n${order.customer.name}\n${order.customer.phone}\n${order.customer.address}, ${order.customer.city}, ${order.customer.state}\n\n🛍 *Items:*\n`;
   order.items.forEach((item, i) => { msg += `${i+1}. ${item.name} × ${item.quantity} = ₦${(item.price*item.quantity).toLocaleString()}\n`; });
   msg += `\n💰 *Total:* ₦${order.total.toLocaleString()}\n💳 *Payment:* ${order.payment.senderName} — ₦${parseInt(order.payment.amountSent).toLocaleString()} at ${order.payment.transferTime}\n📸 *Screenshot:* Attached\n\n_Thank you for choosing ADE!_`;
@@ -774,9 +842,22 @@ function renderReviews() {
   `).join('');
 }
 
+function renderContactInfo() {
+  const cs = getContactSettings();
+  const wa = document.getElementById('contact-whatsapp');
+  if (wa && cs.whatsapp) {
+    const raw = String(cs.whatsapp).replace(/\D/g, '');
+    wa.textContent = raw.startsWith('234') ? '+234 ' + raw.slice(3, 6) + ' ' + raw.slice(6, 9) + ' ' + raw.slice(9) : cs.whatsapp;
+  }
+  const mail = document.getElementById('contact-email-display');
+  if (mail && cs.email) mail.textContent = cs.email;
+  const addr = document.getElementById('contact-address');
+  if (addr && cs.address) addr.textContent = cs.address;
+}
+
 // ===== WHATSAPP CHAT =====
 function openWhatsAppChat() {
-  window.open('https://wa.me/2348012345678?text=Hello!%20I%20have%20a%20question%20about%20ADE%20products.', '_blank');
+  window.open(`https://wa.me/${getContactSettings().whatsapp}?text=Hello!%20I%20have%20a%20question%20about%20ADE%20products.`, '_blank');
 }
 
 function shareProduct(platform) {
@@ -830,6 +911,7 @@ function closeMobileMenu() {
 document.addEventListener('DOMContentLoaded', function() {
   updateCartCount();
   updateCartSidebar();
+  renderContactInfo();
   renderHome();
   
   window.addEventListener('scroll', function() {

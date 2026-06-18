@@ -86,8 +86,34 @@ function checkAuth() {
     window.location.href = 'login.html';
     return;
   }
+  
+  const currentPath = window.location.pathname;
+  const isSuperAdminPage = currentPath.includes('superadmin.html');
+  
+  if (isSuperAdminPage && !ADMIN_STATE.isSuperAdmin) {
+    window.location.href = 'dashboard.html';
+    return;
+  }
+  
+  if (ADMIN_STATE.isSuperAdmin && currentPath.includes('dashboard.html')) {
+    window.location.href = 'superadmin.html';
+    return;
+  }
 
   updateAdminUI();
+}
+
+function updateAdminUI() {
+  const isSuperAdmin = ADMIN_STATE.isSuperAdmin;
+  
+  document.getElementById('admin-name').textContent = ADMIN_STATE.currentAdmin.username || ADMIN_STATE.currentAdmin.email;
+  document.getElementById('admin-role').textContent = isSuperAdmin ? 'Super Admin' : 'Admin';
+  document.getElementById('admin-avatar').textContent = (ADMIN_STATE.currentAdmin.username || ADMIN_STATE.currentAdmin.email).slice(0, 2).toUpperCase();
+  
+  const settingsNav = document.querySelector('a[data-tab="settings"]');
+  const settingsBtn = document.querySelector('button[data-tab="settings"]');
+  if (settingsNav) settingsNav.style.display = isSuperAdmin ? '' : 'none';
+  if (settingsBtn) settingsBtn.style.display = isSuperAdmin ? '' : 'none';
 }
 
 function initAdmin() {
@@ -319,6 +345,17 @@ function openProductModal(productId) {
     try { product = (typeof PRODUCTS !== 'undefined' ? PRODUCTS : []).find(p => p.id === productId); } catch(e) {}
     if (!product) { showToast('Product not found', 'error'); return; }
   }
+
+  const images = isEdit && product.images ? product.images : [];
+  const featuredImage = isEdit && product.featuredImage ? product.featuredImage : (images.length > 0 ? images[0] : '');
+  const existingImagesHtml = images.map((img, i) => `
+    <div style="position:relative;display:inline-block;margin:4px" data-img-index="${i}">
+      <img src="${img}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:2px solid ${img === featuredImage ? 'var(--pink)' : 'var(--glass-border)'}">
+      <button type="button" onclick="removeExistingImage(${i}, event)" style="position:absolute;top:-6px;right:-6px;background:var(--pink);color:white;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:0.7rem;line-height:1">×</button>
+      ${images.length > 1 ? `<button type="button" onclick="setFeaturedImage(${i})" style="position:absolute;bottom:-6px;left:-6px;background:${img === featuredImage ? 'var(--gold)' : 'var(--gray-400)'};color:var(--black);border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:0.55rem;line-height:1" title="Set as featured">★</button>` : ''}
+    </div>
+  `).join('');
+
   content.innerHTML = `
     <button class="modal-close" onclick="closeAdminModal()"><i class="fas fa-times"></i></button>
     <h3 style="font-family:var(--font-display);font-size:1.3rem;margin-bottom:20px">${isEdit ? 'Edit Product' : 'Add Product'}</h3>
@@ -343,33 +380,46 @@ function openProductModal(productId) {
           <input type="number" class="form-input" id="prod-sale" value="${isEdit && product.salePrice ? product.salePrice : ''}">
         </div>
       </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Sale Start Date (optional)</label>
+          <input type="date" class="form-input" id="prod-sale-start" value="${isEdit && product.saleStart ? product.saleStart : ''}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sale End Date (optional)</label>
+          <input type="date" class="form-input" id="prod-sale-end" value="${isEdit && product.saleEnd ? product.saleEnd : ''}">
+        </div>
+      </div>
+      <p style="font-size:0.7rem;color:var(--gray-500);margin-top:-8px;margin-bottom:12px">Leave dates empty for always-active sale. Sale is active only when current date is within the range.</p>
       <div class="form-group">
-        <label class="form-label">Image</label>
-        <input type="file" class="form-input" id="prod-image" accept="image/*">
-        ${isEdit && product.image ? `<img src="${product.image}" style="margin-top:8px;max-height:120px;border-radius:8px">` : ''}
+        <label class="form-label">Product Images (max 8)</label>
+        <div id="image-previews" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${existingImagesHtml}</div>
+        <input type="file" class="form-input" id="prod-images" accept="image/*" multiple ${images.length >= 8 ? 'disabled' : ''}>
+        <p style="font-size:0.7rem;color:var(--gray-500);margin-top:4px">${images.length}/8 images. First image is featured by default. Click ★ to change.</p>
+      </div>
       <div class="form-group">
         <label class="form-label">SKU (optional)</label>
-        <input type="text" class="form-input" id="prod-sku" placeholder="ADE-WG-001">
+        <input type="text" class="form-input" id="prod-sku" placeholder="ADE-WG-001" value="${isEdit ? product.sku || '' : ''}">
       </div>
       <div class="form-group">
         <label class="form-label">Weight / Volume (optional)</label>
-        <input type="text" class="form-input" id="prod-weight" placeholder="1kg / 500g / 500ml">
+        <input type="text" class="form-input" id="prod-weight" placeholder="1kg / 500g / 500ml" value="${isEdit ? product.weight || '' : ''}">
       </div>
       <div class="form-group">
         <label class="form-label">Short Description</label>
-        <textarea class="form-input" id="prod-description" rows="3" placeholder="What this product is, who it's for, and why it works."></textarea>
+        <textarea class="form-input" id="prod-description" rows="3" placeholder="What this product is, who it's for, and why it works.">${isEdit ? (product.description || '') : ''}</textarea>
       </div>
       <div class="form-group">
         <label class="form-label">Key Benefits (one per line)</label>
-        <textarea class="form-input" id="prod-features" rows="3" placeholder="Supports healthy weight gain&#10;Boosts energy naturally&#10;Rich in vitamins and minerals"></textarea>
+        <textarea class="form-input" id="prod-features" rows="3" placeholder="Supports healthy weight gain&#10;Boosts energy naturally&#10;Rich in vitamins and minerals">${isEdit && product.features ? product.features.join('\n') : ''}</textarea>
       </div>
       <div class="form-group">
         <label class="form-label">Key Ingredients (optional)</label>
-        <input type="text" class="form-input" id="prod-ingredients" placeholder="Oats, Millelet, Soy, Crayfish...">
+        <input type="text" class="form-input" id="prod-ingredients" placeholder="Oats, Millelet, Soy, Crayfish..." value="${isEdit ? (product.ingredients || '') : ''}">
       </div>
       <div class="form-group">
         <label class="form-label">Usage Instructions (optional)</label>
-        <textarea class="form-input" id="prod-usage" rows="2" placeholder="Mix 2 scoops with milk or yogurt..."></textarea>
+        <textarea class="form-input" id="prod-usage" rows="2" placeholder="Mix 2 scoops with milk or yogurt...">${isEdit ? (product.usage || '') : ''}</textarea>
       </div>
       <button type="submit" class="btn btn-gold" style="width:100%">
         <i class="fas fa-save"></i> ${isEdit ? 'Update' : 'Create'} Product
@@ -377,6 +427,61 @@ function openProductModal(productId) {
     </form>
   `;
   modal.classList.add('active');
+}
+
+function getExistingImages(productId) {
+  try {
+    const product = (typeof PRODUCTS !== 'undefined' ? PRODUCTS : []).find(p => p.id === productId);
+    if (!product) return [];
+    if (product.images && Array.isArray(product.images)) return product.images;
+    if (product.image) return [product.image];
+  } catch(e) {}
+  return [];
+}
+
+function removeExistingImage(index, event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const previews = document.getElementById('image-previews');
+  if (!previews) return;
+  const imgs = previews.querySelectorAll('[data-img-index]');
+  if (imgs[index]) imgs[index].remove();
+  const fileInput = document.getElementById('prod-images');
+  if (previews.children.length === 0 && fileInput) fileInput.disabled = false;
+}
+
+function setFeaturedImage(index) {
+  const previews = document.getElementById('image-previews');
+  if (!previews) return;
+  const imgs = previews.querySelectorAll('[data-img-index]');
+  imgs.forEach((el, i) => {
+    const img = el.querySelector('img');
+    const star = el.querySelector('button[title="Set as featured"]');
+    if (i === index) {
+      if (img) img.style.borderColor = 'var(--pink)';
+      if (star) { star.style.background = 'var(--gold)'; star.style.color = 'var(--black)'; }
+    } else {
+      if (img) img.style.borderColor = 'var(--glass-border)';
+      if (star) { star.style.background = 'var(--gray-400)'; star.style.color = 'var(--black)'; }
+    }
+  });
+}
+
+function getImagesFromModal() {
+  const previews = document.getElementById('image-previews');
+  const images = [];
+  if (previews) {
+    previews.querySelectorAll('[data-img-index] img').forEach(img => images.push(img.src));
+  }
+  const fileInput = document.getElementById('prod-images');
+  if (fileInput && fileInput.files && fileInput.files.length > 0) {
+    Array.from(fileInput.files).slice(0, 8 - images.length).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => images.push(e.target.result);
+      reader.readAsDataURL(file);
+    });
+  }
+  return images;
 }
 
 function saveProduct(event, productId) {
@@ -391,11 +496,16 @@ function saveProduct(event, productId) {
   const features = document.getElementById('prod-features').value.trim().split('\n').filter(Boolean);
   const ingredients = document.getElementById('prod-ingredients').value.trim();
   const usage = document.getElementById('prod-usage').value.trim();
-  const imageInput = document.getElementById('prod-image');
+  const saleStartInput = document.getElementById('prod-sale-start');
+  const saleEndInput = document.getElementById('prod-sale-end');
+  const saleStart = saleStartInput ? saleStartInput.value.trim() : '';
+  const saleEnd = saleEndInput ? saleEndInput.value.trim() : '';
   if (!name || !originalPrice) { showToast('Name and price required', 'error'); return; }
-  const save = (imageData) => {
+
+  const doSave = (images) => {
     let products = [];
     try { if (typeof PRODUCTS !== 'undefined') products = JSON.parse(JSON.stringify(PRODUCTS)); } catch(e) { products = []; }
+    const featuredImage = images.length > 0 ? images[0] : '';
     const productData = {
       id: productId || ('prod_' + Date.now()),
       name,
@@ -408,13 +518,36 @@ function saveProduct(event, productId) {
       features,
       ingredients,
       usage,
-      image: imageData || ''
+      images,
+      featuredImage,
+      saleStart: saleStart || '',
+      saleEnd: saleEnd || '',
+      rating: 0,
+      reviews: 0,
+      badge: '',
+      categorySlug: category.toLowerCase().replace(/\s+/g, '-')
     };
     if (productId) {
       const idx = products.findIndex(p => p.id === productId);
       if (idx > -1) {
-        products[idx] = { ...products[idx], ...productData };
-        if (imageData) products[idx].image = imageData;
+        const existing = products[idx];
+        productData.rating = existing.rating || 0;
+        productData.reviews = existing.reviews || 0;
+        productData.badge = existing.badge || '';
+        productData.categorySlug = existing.categorySlug || productData.categorySlug;
+        if (!productData.sku) productData.sku = existing.sku || '';
+        if (!productData.weight) productData.weight = existing.weight || '';
+        if (!productData.description) productData.description = existing.description || '';
+        if (!productData.features || productData.features.length === 0) productData.features = existing.features || [];
+        if (!productData.ingredients) productData.ingredients = existing.ingredients || '';
+        if (!productData.usage) productData.usage = existing.usage || '';
+        if (!productData.saleStart) productData.saleStart = existing.saleStart || '';
+        if (!productData.saleEnd) productData.saleEnd = existing.saleEnd || '';
+        if (images.length === 0) {
+          productData.images = existing.images || [];
+          productData.featuredImage = existing.featuredImage || existing.image || '';
+        }
+        products[idx] = productData;
       }
     } else {
       products.push(productData);
@@ -425,12 +558,29 @@ function saveProduct(event, productId) {
     closeAdminModal();
     renderProducts();
   };
-  if (imageInput && imageInput.files && imageInput.files[0]) {
-    const reader = new FileReader();
-    reader.onload = (e) => save(e.target.result);
-    reader.readAsDataURL(imageInput.files[0]);
+
+  const fileInput = document.getElementById('prod-images');
+  const previews = document.getElementById('image-previews');
+  const existingImages = [];
+  if (previews) {
+    previews.querySelectorAll('[data-img-index] img').forEach(img => existingImages.push(img.src));
+  }
+
+  if (fileInput && fileInput.files && fileInput.files.length > 0) {
+    const newFiles = Array.from(fileInput.files).slice(0, 8 - existingImages.length);
+    if (newFiles.length === 0) { doSave(existingImages); return; }
+    let loaded = 0;
+    newFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        existingImages.push(e.target.result);
+        loaded++;
+        if (loaded === newFiles.length) doSave(existingImages);
+      };
+      reader.readAsDataURL(file);
+    });
   } else {
-    save(null);
+    doSave(existingImages.length > 0 ? existingImages : getExistingImages(productId));
   }
 }
 
@@ -469,17 +619,28 @@ function toggleAdminProductSale(productId) {
 function getAdminProductPrice(product) {
   if (!ADMIN_STATE.globalSalesEnabled) return product.originalPrice;
   const po = ADMIN_STATE.productSales[product.id];
-  if (po === false) return product.originalPrice;
-  if (po === true) return product.salePrice;
-  return product.salePrice || product.originalPrice;
+  if (po !== undefined) return po ? (product.salePrice || product.originalPrice) : product.originalPrice;
+  if (product.salePrice && product.salePrice < product.originalPrice && isSaleDateActive(product)) {
+    return product.salePrice;
+  }
+  return product.originalPrice;
+}
+
+function isSaleDateActive(product) {
+  if (!product.saleStart && !product.saleEnd) return true;
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  if (product.saleStart && today < product.saleStart) return false;
+  if (product.saleEnd && today > product.saleEnd) return false;
+  return true;
 }
 
 function hasAdminSaleActive(product) {
   if (!ADMIN_STATE.globalSalesEnabled) return false;
   const po = ADMIN_STATE.productSales[product.id];
-  if (po === false) return false;
-  if (po === true) return true;
-  return !!(product.salePrice && product.salePrice < product.originalPrice);
+  if (po !== undefined) return po === true;
+  if (!product.salePrice || product.salePrice >= product.originalPrice) return false;
+  return isSaleDateActive(product);
 }
 
 // ===== PRODUCTS =====
@@ -527,16 +688,19 @@ function renderProducts() {
   tbody.innerHTML = globalToggle + (products.length === 0 ? '' : addRow) + products.map(p => {
     const saleActive = hasAdminSaleActive(p);
     const po = ADMIN_STATE.productSales[p.id];
-    const checked = po === true || (po === undefined && ADMIN_STATE.globalSalesEnabled && p.salePrice && p.salePrice < p.originalPrice);
+    const effectiveSalePrice = getAdminProductPrice(p);
+    const checked = po === true || (po === undefined && saleActive);
+    const imgCount = p.images ? p.images.length : (p.image ? 1 : 0);
     return `
     <tr>
       <td>
         <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:40px;height:40px;border-radius:8px;background:var(--black-elevated);display:flex;align-items:center;justify-content:center">
-            <i class="fas fa-box" style="color:var(--gold);font-size:1rem"></i>
+          <div style="width:48px;height:48px;border-radius:8px;background:var(--black-elevated);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">
+            ${(p.images && p.images[0]) || p.image ? `<img src="${(p.images && p.images[0]) || p.image}" style="width:100%;height:100%;object-fit:cover">` : '<i class="fas fa-box" style="color:var(--gold);font-size:1rem"></i>'}
           </div>
           <div>
             <div>${p.name}</div>
+            ${imgCount > 1 ? `<div style="font-size:0.7rem;color:var(--gray-500)"><i class="fas fa-images"></i> ${imgCount} images</div>` : ''}
             ${p.sku ? `<div style="font-size:0.7rem;color:var(--gray-500)">${p.sku}</div>` : ''}
           </div>
         </div>
@@ -544,13 +708,14 @@ function renderProducts() {
       <td>${p.category}</td>
       <td>${p.weight || '-'}</td>
       <td>${formatPrice(p.originalPrice)}</td>
-      <td style="color:var(--gold);font-weight:600">${formatPrice(p.salePrice)}</td>
+      <td style="color:var(--gold);font-weight:600">${formatPrice(effectiveSalePrice)}</td>
       <td>
         <label class="toggle-switch" style="position:relative;width:48px;height:26px;cursor:pointer;display:inline-block">
           <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleAdminProductSale('${p.id}')" style="opacity:0;width:0;height:0">
           <span style="position:absolute;inset:0;background:${checked ? 'var(--pink-gradient)' : 'var(--gray-300)'};border-radius:999px;transition:var(--transition-fast);box-shadow:${checked ? '0 0 15px rgba(255,105,180,0.3)' : 'none'}"></span>
           <span style="position:absolute;width:20px;height:20px;border-radius:50%;top:3px;left:3px;background:white;transition:var(--transition-fast);transform:translateX(${checked ? '22px' : '0'});box-shadow:0 2px 4px rgba(0,0,0,0.2)"></span>
         </label>
+        ${p.saleStart || p.saleEnd ? `<div style="font-size:0.65rem;color:var(--gray-500);margin-top:2px">${p.saleStart || '...'} → ${p.saleEnd || '...'}</div>` : ''}
       </td>
       <td>
         <button class="btn btn-gold btn-sm" onclick="openProductModal('${p.id}')"><i class="fas fa-edit"></i> Edit</button>
@@ -622,15 +787,27 @@ function renderAdmins() {
         </div>
       </td>
       <td><span class="status-badge ${a.role === 'superadmin' ? 'status-delivered' : 'status-processing'}">${a.role === 'superadmin' ? 'Super Admin' : 'Admin'}</span></td>
-      <td><span class="status-badge ${a.status === 'active' ? 'status-approved' : 'status-cancelled'}">${a.status}</span></td>
       <td>
         ${ADMIN_STATE.isSuperAdmin && a.role !== 'superadmin' ? `
-          <button class="btn btn-ghost btn-sm" onclick="toggleAdminStatus('${a.email}')">
+          <select onchange="toggleAdminStatusFromSelect('${a.email}', this.value)" style="background:var(--glass-bg);color:var(--white);border:1px solid var(--glass-border);border-radius:6px;padding:4px 8px;font-size:0.75rem;cursor:pointer">
+            <option value="active" ${a.status === 'active' ? 'selected' : ''}>Active</option>
+            <option value="suspended" ${a.status === 'suspended' ? 'selected' : ''}>Suspended</option>
+          </select>
+        ` : `<span class="status-badge ${a.status === 'active' ? 'status-approved' : 'status-cancelled'}">${a.status}</span>`}
+      </td>
+      <td>
+        ${ADMIN_STATE.isSuperAdmin && a.role !== 'superadmin' ? `
+          <button class="btn btn-ghost btn-sm" onclick="toggleAdminStatus('${a.email}')" title="Toggle Status">
             <i class="fas ${a.status === 'active' ? 'fa-ban' : 'fa-check'}"></i>
           </button>
-          <button class="btn btn-danger btn-sm" onclick="deleteAdmin('${a.email}')">
+          <button class="btn btn-primary btn-sm" onclick="openResetPasswordModal('${a.email}')" title="Reset Password">
+            <i class="fas fa-key"></i>
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="deleteAdmin('${a.email}')" title="Delete">
             <i class="fas fa-trash"></i>
           </button>
+        ` : ADMIN_STATE.isSuperAdmin && a.role === 'superadmin' && a.email === ADMIN_STATE.currentAdmin?.email ? `
+          <span style="font-size:0.75rem;color:var(--gold)">You</span>
         ` : '-'}
       </td>
     </tr>
@@ -713,16 +890,124 @@ function toggleAdminStatus(email) {
   renderAdmins();
 }
 
+function toggleAdminStatusFromSelect(email, newStatus) {
+  if (!ADMIN_STATE.isSuperAdmin) return;
+  if (email === ADMIN_STATE.currentAdmin?.email) return;
+  
+  const admin = ADMIN_STATE.admins.find(a => a.email === email);
+  if (!admin) return;
+  
+  admin.status = newStatus;
+  localStorage.setItem('adeAdmins', JSON.stringify(ADMIN_STATE.admins));
+  
+  showToast(`Admin ${newStatus === 'active' ? 'activated' : 'suspended'}`);
+  renderAdmins();
+}
+
 function deleteAdmin(email) {
   if (!ADMIN_STATE.isSuperAdmin) return;
   if (email === ADMIN_STATE.currentAdmin?.email) return;
   
-  if (!confirm('Are you sure you want to delete this admin?')) return;
+  if (!confirm('Are you sure you want to permanently delete this admin?')) return;
   
   ADMIN_STATE.admins = ADMIN_STATE.admins.filter(a => a.email !== email);
   localStorage.setItem('adeAdmins', JSON.stringify(ADMIN_STATE.admins));
   
-  showToast('Admin deleted');
+  showToast('Admin deleted permanently');
+  renderAdmins();
+}
+
+function promoteAdmin(email) {
+  if (!ADMIN_STATE.isSuperAdmin) return;
+  if (email === ADMIN_STATE.currentAdmin?.email) return;
+  
+  const admin = ADMIN_STATE.admins.find(a => a.email === email);
+  if (!admin) return;
+  
+  if (admin.role === 'superadmin') {
+    showToast('Already a Super Admin', 'info');
+    return;
+  }
+  
+  if (!confirm(`Promote ${admin.username || admin.email} to Super Admin?\n\nYou will be demoted to Admin and redirected to the regular dashboard.`)) return;
+  
+  const currentSuper = ADMIN_STATE.currentAdmin;
+  currentSuper.role = 'admin';
+  admin.role = 'superadmin';
+  localStorage.setItem('adeAdmins', JSON.stringify(ADMIN_STATE.admins));
+  
+  showToast(`${admin.username || admin.email} is now Super Admin. You have been demoted to Admin.`);
+  window.location.href = 'dashboard.html';
+}
+
+function demoteAdmin(email) {
+  if (!ADMIN_STATE.isSuperAdmin) return;
+  if (email === ADMIN_STATE.currentAdmin?.email) return;
+  
+  const admin = ADMIN_STATE.admins.find(a => a.email === email);
+  if (!admin) return;
+  
+  if (admin.role === 'admin') {
+    showToast('Already an Admin', 'info');
+    return;
+  }
+  
+  if (!confirm(`Demote ${admin.username || admin.email} to Admin?`)) return;
+  
+  admin.role = 'admin';
+  localStorage.setItem('adeAdmins', JSON.stringify(ADMIN_STATE.admins));
+  
+  showToast(`${admin.username || admin.email} demoted to Admin`);
+  renderAdmins();
+}
+
+function openResetPasswordModal(email) {
+  if (!ADMIN_STATE.isSuperAdmin) return;
+  
+  const modal = document.getElementById('admin-modal');
+  const content = document.getElementById('admin-modal-content');
+  if (!modal || !content) return;
+  
+  const admin = ADMIN_STATE.admins.find(a => a.email === email);
+  if (!admin) return;
+  
+  content.innerHTML = `
+    <button class="modal-close" onclick="closeAdminModal()"><i class="fas fa-times"></i></button>
+    <h3 style="font-family:var(--font-display);font-size:1.3rem;margin-bottom:20px">Reset Password</h3>
+    <p style="color:var(--gray-500);margin-bottom:20px;font-size:0.9rem">
+      Resetting password for: <strong style="color:var(--white)">${admin.username || admin.email}</strong>
+    </p>
+    <form onsubmit="resetAdminPassword(event, '${email}')">
+      <div class="form-group">
+        <label class="form-label">New Password</label>
+        <input type="text" class="form-input" id="reset-password" placeholder="Enter new password" required minlength="4">
+      </div>
+      <button type="submit" class="btn btn-gold" style="width:100%">
+        <i class="fas fa-key"></i> Reset Password
+      </button>
+    </form>
+  `;
+  
+  modal.classList.add('active');
+}
+
+function resetAdminPassword(event, email) {
+  event.preventDefault();
+  
+  const admin = ADMIN_STATE.admins.find(a => a.email === email);
+  if (!admin) return;
+  
+  const newPassword = document.getElementById('reset-password').value.trim();
+  if (!newPassword || newPassword.length < 4) {
+    showToast('Password must be at least 4 characters', 'error');
+    return;
+  }
+  
+  admin.password = newPassword;
+  localStorage.setItem('adeAdmins', JSON.stringify(ADMIN_STATE.admins));
+  
+  showToast(`Password reset for ${admin.username || admin.email}`);
+  closeAdminModal();
   renderAdmins();
 }
 

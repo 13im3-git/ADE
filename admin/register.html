@@ -204,6 +204,22 @@
       }, 3500);
     }
     
+    function checkAuth() {
+      const session = sessionStorage.getItem('adeAdminSession');
+      if (session) {
+        try {
+          const data = JSON.parse(session);
+          const admins = JSON.parse(localStorage.getItem('adeAdmins') || '[]');
+          const admin = admins.find(a => a.email === data.email && a.status === 'active');
+          if (admin) {
+            window.location.href = admin.role === 'superadmin' ? 'superadmin.html' : 'dashboard.html';
+          }
+        } catch(e) {}
+      }
+    }
+    
+    checkAuth();
+    
     function handleRegister(event) {
       event.preventDefault();
       const username = document.getElementById('reg-username').value.trim();
