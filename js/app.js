@@ -43,52 +43,10 @@ function generateOrderNumber() {
   return 'ADE-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
 }
 
-// ===== SALES TOGGLE SYSTEM =====
-function toggleGlobalSales() {
-  STATE.salesEnabled = !STATE.salesEnabled;
-  localStorage.setItem('adeSalesEnabled', JSON.stringify(STATE.salesEnabled));
-  document.querySelectorAll('#global-sales-toggle, #global-sales-toggle-ft').forEach(cb => { if (cb) cb.checked = STATE.salesEnabled; });
-  reRenderProducts();
-  showToast(STATE.salesEnabled ? 'Sales ON — Discounts active' : 'Sales OFF — Original prices', 'info');
-}
-
-function getProductPrice(product) {
-  if (!STATE.salesEnabled) return product.originalPrice;
-  const po = STATE.productSales[product.id];
-  if (po === false) return product.originalPrice;
-  if (po === true) return product.salePrice;
-  return product.salePrice || product.originalPrice;
-}
-
-function hasSaleActive(product) {
-  if (!STATE.salesEnabled) return false;
-  const po = STATE.productSales[product.id];
-  if (po === false) return false;
-  if (po === true) return true;
-  return !!(product.salePrice && product.salePrice < product.originalPrice);
-}
-
-function toggleProductSale(productId) {
-  const current = STATE.productSales[productId];
-  if (current === undefined) STATE.productSales[productId] = false;
-  else if (current === false) STATE.productSales[productId] = true;
-  else delete STATE.productSales[productId];
-  localStorage.setItem('adeProductSales', JSON.stringify(STATE.productSales));
-  reRenderProducts();
-  const p = PRODUCTS.find(x => x.id === productId);
-  const s = STATE.productSales[productId];
-  showToast(`${p?.name||'Product'}: ${s===false?'Sale OFF':s===true?'Sale ON':'Default'}`, 'info');
-}
-
+// ===== RENDER HELPERS =====
 function reRenderProducts() {
   if (STATE.currentPage === 'home') { renderFeaturedProducts(); renderBestSellers(); }
   if (STATE.currentPage === 'shop') renderShop(STATE.currentFilter || document.querySelector('.filter-btn.active')?.dataset?.filter);
-}
-
-function salesToggleHTML(product) {
-  const on = STATE.productSales[product.id];
-  const checked = on === true || (on === undefined && STATE.salesEnabled && product.salePrice && product.salePrice < product.originalPrice);
-  return `<div class="product-sale-toggle"><input type="checkbox" id="s-${product.id}" ${checked?'checked':''} onchange="toggleProductSale('${product.id}')"><label for="s-${product.id}">Sale</label></div>`;
 }
 
 function getStarsHTML(rating) {
@@ -223,17 +181,7 @@ function renderFeaturedProducts() {
   const grid = document.getElementById('featured-products');
   if (!grid) return;
   const featured = PRODUCTS.slice(0, 4);
-  const toggleHTML = `
-    <div class="sales-toggle-bar" style="grid-column:1/-1">
-      <span class="sales-toggle-label">Sales Mode</span>
-      <label class="toggle-switch">
-        <input type="checkbox" id="global-sales-toggle-ft" ${STATE.salesEnabled ? 'checked' : ''} onchange="toggleGlobalSales()">
-        <span class="toggle-slider"></span>
-      </label>
-      <span class="sales-toggle-label" style="color:${STATE.salesEnabled ? 'var(--pink)' : 'var(--gray-500)'}">${STATE.salesEnabled ? 'ON' : 'OFF'}</span>
-    </div>
-  `;
-  grid.innerHTML = toggleHTML + featured.map(product => renderProductCard(product)).join('');
+  grid.innerHTML = featured.map(product => renderProductCard(product)).join('');
 }
 
 function renderBestSellers() {
@@ -244,12 +192,11 @@ function renderBestSellers() {
 }
 
 function renderProductCard(product) {
-  const hasSale = hasSaleActive(product);
-  const currentPrice = getProductPrice(product);
-  
+  const hasSale = product.salePrice && product.salePrice < product.originalPrice;
+  const currentPrice = hasSale ? product.salePrice : product.originalPrice;
+
   return `
     <div class="product-card fade-up">
-      ${salesToggleHTML(product)}
       <span class="product-badge ${hasSale ? 'badge-sale' : product.badge === 'best-seller' ? 'badge-best-seller' : 'badge-new'}">
         ${hasSale ? `-${getDiscountPercent(product.originalPrice, product.salePrice)}%` : product.badge === 'best-seller' ? 'Best Seller' : product.badge === 'new' ? 'New' : product.badge || ''}
       </span>
@@ -358,20 +305,7 @@ function renderShop(filter) {
     return;
   }
   
-  const toggleHTML = `
-    <div class="sales-toggle-bar" style="grid-column:1/-1">
-      <span class="sales-toggle-label">Sales Mode</span>
-      <label class="toggle-switch">
-        <input type="checkbox" id="global-sales-toggle" ${STATE.salesEnabled ? 'checked' : ''} onchange="toggleGlobalSales()">
-        <span class="toggle-slider"></span>
-      </label>
-      <span class="sales-toggle-label" style="color:${STATE.salesEnabled ? 'var(--pink)' : 'var(--gray-500)'}">
-        ${STATE.salesEnabled ? 'ON — Discounts Active' : 'OFF — Original Prices'}
-      </span>
-    </div>
-  `;
-  
-  grid.innerHTML = toggleHTML + filtered.map(product => renderProductCard(product)).join('');
+  grid.innerHTML = filtered.map(product => renderProductCard(product)).join('');
   
   const countEl = document.getElementById('product-count');
   if (countEl) countEl.textContent = `${filtered.length} products`;
@@ -399,8 +333,8 @@ function renderProductDetail(productId) {
           <span class="rating-count">(${product.reviews} reviews)</span>
         </div>
         <div class="product-detail-price">
-          <span class="current-price" style="font-size:2rem">${formatPrice(getProductPrice(product))}</span>
-          ${hasSaleActive(product) ? `<span class="original-price" style="font-size:1rem">${formatPrice(product.originalPrice)}</span><span class="discount" style="margin-left:8px">-${getDiscountPercent(product.originalPrice, product.salePrice)}%</span>` : ''}
+          <span class="current-price" style="font-size:2rem">${formatPrice(product.salePrice && product.salePrice < product.originalPrice ? product.salePrice : product.originalPrice)}</span>
+          ${product.salePrice && product.salePrice < product.originalPrice ? `<span class="original-price" style="font-size:1rem">${formatPrice(product.originalPrice)}</span><span class="discount" style="margin-left:8px">-${getDiscountPercent(product.originalPrice, product.salePrice)}%</span>` : ''}
         </div>
         <p class="product-detail-description">${product.description}</p>
         
@@ -487,6 +421,7 @@ function addToCart(productId, quantity = 1) {
   const product = PRODUCTS.find(p => p.id === productId);
   if (!product) return;
   
+  const price = product.salePrice && product.salePrice < product.originalPrice ? product.salePrice : product.originalPrice;
   const existing = STATE.cart.find(item => item.id === productId);
   if (existing) {
     existing.quantity += quantity;
@@ -494,7 +429,7 @@ function addToCart(productId, quantity = 1) {
     STATE.cart.push({
       id: product.id,
       name: product.name,
-      price: getProductPrice(product),
+      price: price,
       originalPrice: product.originalPrice,
       image: product.image,
       quantity: quantity
