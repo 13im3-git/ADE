@@ -1084,12 +1084,12 @@ input, textarea, select { font-family: inherit; outline: none; }
 .swiper-pagination-bullet-active { background: var(--pink) !important; opacity: 1 !important; width: 30px !important; border-radius: 5px !important; }
 
 /* ============================================
-   BEFORE / AFTER
+   BEFORE / AFTER — Portrait
    ============================================ */
-.before-after-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
-.before-after-card { background: var(--black-card); border: 1px solid var(--glass-border); border-radius: 20px; overflow: hidden; position: relative; }
+.before-after-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
+.before-after-card { background: var(--black-card); border: 1px solid var(--glass-border); border-radius: 20px; overflow: hidden; position: relative; aspect-ratio: 3/4; display: flex; flex-direction: column; }
 .before-after-card .before, .before-after-card .after {
-  height: 220px; display: flex; align-items: center; justify-content: center; text-align: center; position: relative;
+  flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; position: relative;
 }
 .before-after-card .before { background: rgba(255,255,255,0.02); border-bottom: 2px solid var(--gray-200); }
 .before-after-card .after { background: rgba(255,105,180,0.02); border-bottom: 2px solid rgba(255,105,180,0.2); }

@@ -600,7 +600,11 @@ const BEFORE_AFTER = [
   { id: 1, name: 'Chioma', result: 'Slimthick transformation in 3 months' },
   { id: 2, name: 'Blessing', result: 'Booty enhancement in 2 months' },
   { id: 3, name: 'Amara', result: 'Weight gain journey - 10kg in 2 months' },
-  { id: 4, name: 'Ifeoma', result: 'Post-pregnancy flat tummy in 2 months' }
+  { id: 4, name: 'Ifeoma', result: 'Post-pregnancy flat tummy in 2 months' },
+  { id: 5, name: 'Ngozi', result: 'Breast enlargement results in 8 weeks' },
+  { id: 6, name: 'Fatima', result: 'Hips growth journey - 3 months' },
+  { id: 7, name: 'Chidinma', result: 'Complete Curve Booster Set results' },
+  { id: 8, name: 'Aisha', result: 'Weight gain from 48kg to 58kg' }
 ];
 
 // FAQ data
