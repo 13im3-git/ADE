@@ -154,6 +154,7 @@ function switchTab(tab) {
   // Render content
   switch(tab) {
     case 'dashboard': renderDashboard(); break;
+    case 'analytics': renderAnalytics(); break;
     case 'orders': renderOrders(); break;
     case 'products': renderProducts(); break;
     case 'customers': renderCustomers(); break;
@@ -1096,6 +1097,131 @@ function saveSettings() {
   };
   localStorage.setItem('adeSettings', JSON.stringify(settings));
   showToast('Settings saved successfully');
+}
+
+// ===== ANALYTICS =====
+function renderAnalytics() {
+  const container = document.getElementById('tab-analytics');
+  if (!container) return;
+
+  const rangeVal = parseInt(document.getElementById('analytics-range')?.value || '30', 10);
+  const now = Date.now();
+  const cutoff = now - rangeVal * 24 * 60 * 60 * 1000;
+  const orders = (ADMIN_STATE.orders || []).filter(o => new Date(o.date || o.orderNumber).getTime() >= cutoff && o.status !== 'cancelled');
+
+  const totalRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const totalOrders = orders.length;
+  const avgOrder = totalOrders ? Math.round(totalRevenue / totalOrders) : 0;
+  const uniqueCustomers = new Set(orders.map(o => o.customer?.phone).filter(Boolean)).size;
+
+  const revenueEl = document.getElementById('analytics-revenue');
+  const ordersEl = document.getElementById('analytics-orders');
+  const avgEl = document.getElementById('analytics-avg');
+  const customersEl = document.getElementById('analytics-customers');
+  if (revenueEl) revenueEl.textContent = formatPrice(totalRevenue);
+  if (ordersEl) ordersEl.textContent = totalOrders;
+  if (avgEl) avgEl.textContent = formatPrice(avgOrder);
+  if (customersEl) customersEl.textContent = uniqueCustomers;
+
+  renderAnalyticsChart(orders, cutoff, now);
+  renderAnalyticsCategories(orders);
+  renderAnalyticsRecent(orders);
+}
+
+function renderAnalyticsChart(orders, cutoff, now) {
+  const chartEl = document.getElementById('analytics-chart');
+  if (!chartEl) return;
+
+  const buckets = 30;
+  const step = (now - cutoff) / buckets;
+  const values = new Array(buckets).fill(0);
+  orders.forEach(o => {
+    const ts = new Date(o.date || o.orderNumber).getTime();
+    const idx = Math.min(buckets - 1, Math.max(0, Math.floor((ts - cutoff) / step)));
+    values[idx] += o.total || 0;
+  });
+  const max = Math.max(...values, 1);
+
+  chartEl.innerHTML = values.map(v => {
+    const h = Math.max(3, Math.round((v / max) * 180));
+    return `<div style="flex:1;min-width:8px;height:${h}px;background:linear-gradient(180deg, var(--pink-gradient), rgba(255,105,180,0.2));border-radius:3px 3px 0 0;transition:height 0.4s ease"></div>`;
+  }).join('');
+}
+
+function renderAnalyticsCategories(orders) {
+  const el = document.getElementById('analytics-categories');
+  if (!el) return;
+  const map = {};
+  orders.forEach(o => {
+    o.items.forEach(it => {
+      const cat = it.category || 'Other';
+      map[cat] = (map[cat] || 0) + (it.price * it.quantity);
+    });
+  });
+  const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const max = sorted[0]?.[1] || 1;
+  if (sorted.length === 0) {
+    el.innerHTML = '<p style="color:var(--gray-500);padding:20px 0">No category data yet</p>';
+    return;
+  }
+  el.innerHTML = sorted.map(([cat, val]) => `
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px">
+        <span style="color:var(--white)">${cat}</span>
+        <span style="color:var(--gold)">${formatPrice(val)}</span>
+      </div>
+      <div style="height:6px;background:var(--glass-bg);border-radius:50px;overflow:hidden">
+        <div style="width:${Math.round((val/max)*100)}%;height:100%;background:linear-gradient(90deg, #FF69B4, #D4AF37);border-radius:50px"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderAnalyticsRecent(orders) {
+  const el = document.getElementById('analytics-recent');
+  if (!el) return;
+  const recent = orders.slice().sort((a, b) => new Date(b.date || b.orderNumber) - new Date(a.date || a.orderNumber)).slice(0, 20);
+  if (recent.length === 0) {
+    el.innerHTML = '<p style="color:var(--gray-500);padding:20px 0">No transactions yet</p>';
+    return;
+  }
+  el.innerHTML = recent.map(o => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--glass-border)">
+      <div>
+        <div style="font-size:0.8rem;color:var(--white);font-weight:600">${o.orderNumber}</div>
+        <div style="font-size:0.7rem;color:var(--gray-500)">${o.customer?.name || 'Guest'} · ${new Date(o.date || o.orderNumber).toLocaleDateString()}</div>
+      </div>
+      <div style="font-family:var(--font-display);color:var(--gold);font-weight:700">${formatPrice(o.total)}</div>
+    </div>
+  `).join('');
+}
+
+function exportAnalyticsCSV() {
+  const orders = ADMIN_STATE.orders || [];
+  if (!orders.length) { showToast('No data to export', 'error'); return; }
+  const header = 'Order,Customer,Phone,Total,Date,Status\n';
+  const rows = orders.map(o => `${o.orderNumber},"${o.customer?.name || ''}",${o.customer?.phone || ''},${o.total},${o.date || o.orderNumber},${o.status}`);
+  const csv = header + rows.join('\n');
+  downloadBlob(csv, `ade-analytics-${new Date().toISOString().slice(0,10)}.csv`, 'text/csv');
+  showToast('CSV exported');
+}
+
+function exportAnalyticsJSON() {
+  const data = { exportedAt: new Date().toISOString(), orders: ADMIN_STATE.orders || [] };
+  downloadBlob(JSON.stringify(data, null, 2), `ade-analytics-${new Date().toISOString().slice(0,10)}.json`, 'application/json');
+  showToast('JSON exported');
+}
+
+function downloadBlob(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // ===== LOGOUT =====
