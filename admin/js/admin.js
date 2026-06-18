@@ -350,8 +350,8 @@ function openProductModal(productId) {
   const images = isEdit && product.images ? product.images : [];
   const featuredImage = isEdit && product.featuredImage ? product.featuredImage : (images.length > 0 ? images[0] : '');
   const existingImagesHtml = images.map((img, i) => `
-    <div style="position:relative;display:inline-block;margin:4px" data-img-index="${i}">
-      <img src="${img}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:2px solid ${img === featuredImage ? 'var(--pink)' : 'var(--glass-border)'}">
+    <div style="position:relative;display:inline-block;margin:4px" data-img-index="${i}" draggable="true">
+      <img src="${img}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:2px solid ${img === featuredImage ? 'var(--pink)' : 'var(--glass-border)'};cursor:grab">
       <button type="button" onclick="removeExistingImage(${i}, event)" style="position:absolute;top:-6px;right:-6px;background:var(--pink);color:white;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:0.7rem;line-height:1">×</button>
       ${images.length > 1 ? `<button type="button" onclick="setFeaturedImage(${i})" style="position:absolute;bottom:-6px;left:-6px;background:${img === featuredImage ? 'var(--gold)' : 'var(--gray-400)'};color:var(--black);border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:0.55rem;line-height:1" title="Set as featured">★</button>` : ''}
     </div>
@@ -422,12 +422,52 @@ function openProductModal(productId) {
         <label class="form-label">Usage Instructions (optional)</label>
         <textarea class="form-input" id="prod-usage" rows="2" placeholder="Mix 2 scoops with milk or yogurt...">${isEdit ? (product.usage || '') : ''}</textarea>
       </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Inventory (optional)</label>
+          <input type="number" class="form-input" id="prod-inventory" placeholder="100" value="${isEdit && product.inventory != null ? product.inventory : ''}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-select" id="prod-status">
+            <option value="published" ${isEdit && product.status === 'published' ? 'selected' : '' || !isEdit ? 'selected' : ''}>Published</option>
+            <option value="draft" ${isEdit && product.status === 'draft' ? 'selected' : ''}>Draft</option>
+            <option value="archived" ${isEdit && product.status === 'archived' ? 'selected' : ''}>Archived</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Product Variants (one per line, optional)</label>
+        <textarea class="form-input" id="prod-variants" rows="2" placeholder="Size: Small&#10;Size: Large">${isEdit && product.variants && product.variants.length ? product.variants.join('\n') : ''}</textarea>
+      </div>
+      <h4 style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;margin:24px 0 12px;color:var(--gold)">SEO</h4>
+      <div class="form-group">
+        <label class="form-label">SEO Title</label>
+        <input type="text" class="form-input" id="prod-seo-title" placeholder="ADE Weight Gain Syrup - Premium Formula" value="${isEdit && product.seo?.title ? product.seo.title : ''}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">SEO Description</label>
+        <textarea class="form-input" id="prod-seo-desc" rows="2" placeholder="Boost your weight gain journey with our premium syrup...">${isEdit && product.seo?.description ? product.seo.description : ''}</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">SEO Tags (comma separated)</label>
+        <input type="text" class="form-input" id="prod-seo-tags" placeholder="weight gain, syrup, energy" value="${isEdit && product.seo?.tags ? product.seo.tags : ''}">
+      </div>
       <button type="submit" class="btn btn-gold" style="width:100%">
         <i class="fas fa-save"></i> ${isEdit ? 'Update' : 'Create'} Product
       </button>
     </form>
   `;
   modal.classList.add('active');
+  setTimeout(initImageDragDrop, 50);
+  setTimeout(() => {
+    const previews = document.getElementById('image-previews');
+    if (previews) {
+      previews.querySelectorAll('[data-img-index]').forEach(el => {
+        el.setAttribute('draggable', 'true');
+      });
+    }
+  }, 50);
 }
 
 function getExistingImages(productId) {
@@ -501,6 +541,16 @@ function saveProduct(event, productId) {
   const saleEndInput = document.getElementById('prod-sale-end');
   const saleStart = saleStartInput ? saleStartInput.value.trim() : '';
   const saleEnd = saleEndInput ? saleEndInput.value.trim() : '';
+  const inventoryInput = document.getElementById('prod-inventory');
+  const inventory = inventoryInput ? Number(inventoryInput.value) : null;
+  const variantsInput = document.getElementById('prod-variants');
+  const variants = variantsInput ? variantsInput.value.split('\n').map(v => v.trim()).filter(Boolean) : [];
+  const seoTitle = document.getElementById('prod-seo-title')?.value.trim() || '';
+  const seoDesc = document.getElementById('prod-seo-desc')?.value.trim() || '';
+  const seoTags = document.getElementById('prod-seo-tags')?.value.trim() || '';
+  const statusSelect = document.getElementById('prod-status');
+  const statusRaw = statusSelect ? statusSelect.value : 'published';
+  const status = ['draft', 'published', 'archived'].includes(statusRaw) ? statusRaw : 'published';
   if (!name || !originalPrice) { showToast('Name and price required', 'error'); return; }
 
   const doSave = (images) => {
@@ -526,7 +576,11 @@ function saveProduct(event, productId) {
       rating: 0,
       reviews: 0,
       badge: '',
-      categorySlug: category.toLowerCase().replace(/\s+/g, '-')
+      categorySlug: category.toLowerCase().replace(/\s+/g, '-'),
+      inventory,
+      variants,
+      seo: { title: seoTitle, description: seoDesc, tags: seoTags },
+      status
     };
     if (productId) {
       const idx = products.findIndex(p => p.id === productId);
@@ -548,6 +602,10 @@ function saveProduct(event, productId) {
           productData.images = existing.images || [];
           productData.featuredImage = existing.featuredImage || existing.image || '';
         }
+        if (!productData.inventory && productData.inventory !== 0) productData.inventory = existing.inventory ?? null;
+        if (!productData.variants || productData.variants.length === 0) productData.variants = existing.variants || [];
+        if (!productData.seo || !productData.seo.title) productData.seo = existing.seo || productData.seo;
+        if (!['draft','published','archived'].includes(existing.status)) productData.status = existing.status || productData.status;
         products[idx] = productData;
       }
     } else {
@@ -560,29 +618,63 @@ function saveProduct(event, productId) {
     renderProducts();
   };
 
+  const ordered = getImageOrderFromModal();
   const fileInput = document.getElementById('prod-images');
-  const previews = document.getElementById('image-previews');
-  const existingImages = [];
-  if (previews) {
-    previews.querySelectorAll('[data-img-index] img').forEach(img => existingImages.push(img.src));
-  }
-
   if (fileInput && fileInput.files && fileInput.files.length > 0) {
-    const newFiles = Array.from(fileInput.files).slice(0, 8 - existingImages.length);
-    if (newFiles.length === 0) { doSave(existingImages); return; }
+    const remaining = 8 - ordered.length;
+    if (remaining <= 0) { doSave(ordered); return; }
     let loaded = 0;
-    newFiles.forEach(file => {
+    const files = Array.from(fileInput.files).slice(0, remaining);
+    if (!files.length) { doSave(ordered); return; }
+    files.forEach(file => {
       const reader = new FileReader();
       reader.onload = (e) => {
-        existingImages.push(e.target.result);
+        ordered.push(e.target.result);
         loaded++;
-        if (loaded === newFiles.length) doSave(existingImages);
+        if (loaded === files.length) doSave(ordered);
       };
       reader.readAsDataURL(file);
     });
   } else {
-    doSave(existingImages.length > 0 ? existingImages : getExistingImages(productId));
+    doSave(ordered.length > 0 ? ordered : getExistingImages(productId));
   }
+}
+
+function initImageDragDrop() {
+  const previews = document.getElementById('image-previews');
+  if (!previews) return;
+  let dragItem = null;
+  previews.addEventListener('dragstart', (e) => {
+    dragItem = e.target.closest('[data-img-index]');
+    if (dragItem) { e.dataTransfer.effectAllowed = 'move'; }
+  });
+  previews.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const target = e.target.closest('[data-img-index]');
+    if (!target || target === dragItem) return;
+    const items = [...previews.querySelectorAll('[data-img-index]')];
+    const next = items.indexOf(target);
+    if (next > -1) {
+      previews.insertBefore(dragItem, items[next + 1] || null);
+    }
+  });
+  previews.addEventListener('dragend', () => { dragItem = null; });
+}
+
+function getImageOrderFromModal() {
+  const previews = document.getElementById('image-previews');
+  const images = [];
+  if (previews) {
+    previews.querySelectorAll('[data-img-index] img').forEach(img => images.push(img.src));
+  }
+  const fileInput = document.getElementById('prod-images');
+  if (fileInput && fileInput.files && fileInput.files.length) {
+    Array.from(fileInput.files).forEach(file => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+    });
+  }
+  return images;
 }
 
 function deleteProduct(productId) {
@@ -1116,25 +1208,122 @@ function renderAnalytics() {
   const rangeVal = parseInt(document.getElementById('analytics-range')?.value || '30', 10);
   const now = Date.now();
   const cutoff = now - rangeVal * 24 * 60 * 60 * 1000;
-  const orders = (ADMIN_STATE.orders || []).filter(o => new Date(o.date || o.orderNumber).getTime() >= cutoff && o.status !== 'cancelled');
+  const orders = (ADMIN_STATE.orders || []).filter(o => new Date(o.date || o.orderNumber).getTime() >= cutoff);
 
-  const totalRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const totalRevenue = orders.filter(o => o.status !== 'cancelled').reduce((sum, o) => sum + (o.total || 0), 0);
   const totalOrders = orders.length;
   const avgOrder = totalOrders ? Math.round(totalRevenue / totalOrders) : 0;
   const uniqueCustomers = new Set(orders.map(o => o.customer?.phone).filter(Boolean)).size;
+  const pendingOrders = orders.filter(o => o.status === 'pending').length;
+  const processingOrders = orders.filter(o => o.status === 'processing').length;
+  const shippedOrders = orders.filter(o => o.status === 'shipped').length;
+  const deliveredOrders = orders.filter(o => o.status === 'delivered').length;
+  const completedOrders = orders.filter(o => o.status === 'delivered').length;
+  const completionRate = totalOrders ? Math.round((completedOrders / totalOrders) * 100) : 0;
+  const revenuePerCustomer = uniqueCustomers ? Math.round(totalRevenue / uniqueCustomers) : 0;
 
   const revenueEl = document.getElementById('analytics-revenue');
   const ordersEl = document.getElementById('analytics-orders');
   const avgEl = document.getElementById('analytics-avg');
   const customersEl = document.getElementById('analytics-customers');
+  const pendingEl = document.getElementById('analytics-pending');
+  const processingEl = document.getElementById('analytics-processing');
+  const shippedEl = document.getElementById('analytics-shipped');
+  const deliveredEl = document.getElementById('analytics-delivered');
+  const completionEl = document.getElementById('analytics-completion');
+  const revPerCustEl = document.getElementById('analytics-revenue-per-customer');
   if (revenueEl) revenueEl.textContent = formatPrice(totalRevenue);
   if (ordersEl) ordersEl.textContent = totalOrders;
   if (avgEl) avgEl.textContent = formatPrice(avgOrder);
   if (customersEl) customersEl.textContent = uniqueCustomers;
+  if (pendingEl) pendingEl.textContent = pendingOrders;
+  if (processingEl) processingEl.textContent = processingOrders;
+  if (shippedEl) shippedEl.textContent = shippedOrders;
+  if (deliveredEl) deliveredEl.textContent = deliveredOrders;
+  if (completionEl) completionEl.textContent = completionRate + '%';
+  if (revPerCustEl) revPerCustEl.textContent = formatPrice(revenuePerCustomer);
 
   renderAnalyticsChart(orders, cutoff, now);
+  renderAnalyticsStatusBreakdown(orders);
+  renderAnalyticsBestCategory(orders);
   renderAnalyticsCategories(orders);
+  renderAnalyticsTopProducts(orders);
   renderAnalyticsRecent(orders);
+}
+
+function renderAnalyticsStatusBreakdown(orders) {
+  const el = document.getElementById('analytics-status-breakdown');
+  if (!el) return;
+  const map = {};
+  const statusOrder = ['pending', 'approved', 'processing', 'shipped', 'delivered'];
+  orders.forEach(o => {
+    const s = o.status || 'pending';
+    map[s] = (map[s] || 0) + 1;
+  });
+  const total = orders.length || 1;
+  if (Object.keys(map).length === 0) {
+    el.innerHTML = '<p style="color:var(--gray-500);padding:20px 0">No order data yet</p>';
+    return;
+  }
+  el.innerHTML = statusOrder.filter(s => map[s]).map(s => {
+    const count = map[s];
+    const pct = Math.round((count / total) * 100);
+    const colors = {
+      pending: '#FFC107',
+      approved: '#25D366',
+      processing: '#2196F3',
+      shipped: '#9C27B0',
+      delivered: '#4CAF50'
+    };
+    const color = colors[s] || '#888';
+    return `
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px">
+          <span style="color:var(--white);text-transform:capitalize">${s}</span>
+          <span style="color:var(--gray-500)">${count} (${pct}%)</span>
+        </div>
+        <div style="height:6px;background:var(--glass-bg);border-radius:50px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:${color};border-radius:50px;transition:width 0.4s ease"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderAnalyticsBestCategory(orders) {
+  const el = document.getElementById('analytics-best-category');
+  if (!el) return;
+  const map = {};
+  orders.forEach(o => {
+    o.items.forEach(it => {
+      const cat = it.category || 'Other';
+      map[cat] = (map[cat] || 0) + (it.price * it.quantity);
+    });
+  });
+  const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]);
+  if (sorted.length === 0) {
+    el.innerHTML = '<p style="color:var(--gray-500);padding:20px 0">No data yet</p>';
+    return;
+  }
+  const [best, val] = sorted[0];
+  const total = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const pct = total ? Math.round((val / total) * 100) : 0;
+  el.innerHTML = `
+    <div style="padding:20px 0">
+      <div style="font-family:var(--font-display);font-size:1.4rem;color:var(--gold);margin-bottom:8px">${best}</div>
+      <div style="font-size:0.9rem;color:var(--gray-500);margin-bottom:16px">${formatPrice(val)} revenue · ${pct}% of total</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div style="padding:12px;background:var(--glass-bg);border-radius:10px;border:1px solid var(--glass-border)">
+          <div style="font-size:0.7rem;color:var(--gray-500);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Orders</div>
+          <div style="font-family:var(--font-display);font-size:1.1rem;color:var(--white)">${orders.filter(o => o.items.some(it => (it.category || 'Other') === best)).length}</div>
+        </div>
+        <div style="padding:12px;background:var(--glass-bg);border-radius:10px;border:1px solid var(--glass-border)">
+          <div style="font-size:0.7rem;color:var(--gray-500);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Avg Sale</div>
+          <div style="font-family:var(--font-display);font-size:1.1rem;color:var(--white)">${formatPrice(avgOrder)}</div>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function renderAnalyticsChart(orders, cutoff, now) {
@@ -1201,6 +1390,36 @@ function renderAnalyticsRecent(orders) {
         <div style="font-size:0.7rem;color:var(--gray-500)">${o.customer?.name || 'Guest'} · ${new Date(o.date || o.orderNumber).toLocaleDateString()}</div>
       </div>
       <div style="font-family:var(--font-display);color:var(--gold);font-weight:700">${formatPrice(o.total)}</div>
+    </div>
+  `).join('');
+}
+
+function renderAnalyticsTopProducts(orders) {
+  const el = document.getElementById('analytics-top-products');
+  if (!el) return;
+  const map = {};
+  orders.forEach(o => {
+    o.items.forEach(it => {
+      const key = it.name || 'Unknown';
+      map[key] = (map[key] || 0) + (it.price * it.quantity);
+    });
+  });
+  const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const max = sorted[0]?.[1] || 1;
+  if (sorted.length === 0) {
+    el.innerHTML = '<p style="color:var(--gray-500);padding:20px 0">No products sold yet</p>';
+    return;
+  }
+  el.innerHTML = sorted.map(([name, val], idx) => `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <div style="width:24px;height:24px;border-radius:50%;background:${idx < 3 ? 'var(--gold-gradient)' : 'var(--glass-bg)'};color:${idx < 3 ? 'var(--black)' : 'var(--gray-500)'};display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0">${idx + 1}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:0.8rem;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div>
+        <div style="height:4px;background:var(--glass-bg);border-radius:50px;overflow:hidden;margin-top:4px">
+          <div style="width:${Math.round((val/max)*100)}%;height:100%;background:linear-gradient(90deg, #FF69B4, #D4AF37);border-radius:50px"></div>
+        </div>
+      </div>
+      <div style="font-family:var(--font-display);color:var(--gold);font-size:0.8rem;font-weight:700;margin-left:8px">${formatPrice(val)}</div>
     </div>
   `).join('');
 }
