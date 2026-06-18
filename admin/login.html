@@ -227,7 +227,13 @@
       localStorage.setItem('adeCurrentAdmin', JSON.stringify(admin));
       showToast('Login successful!', 'success');
       setTimeout(() => {
-        window.location.href = admin.role === 'superadmin' ? 'superadmin.html' : 'dashboard.html';
+        const admins = JSON.parse(localStorage.getItem('adeAdmins') || '[]');
+        const admin = admins.find(a => a.email === data.email && a.status === 'active');
+        if (admin && admin.role === 'superadmin') {
+          window.location.href = 'superadmin.html';
+        } else {
+          window.location.href = 'dashboard.html';
+        }
       }, 800);
     }
   </script>
