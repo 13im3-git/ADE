@@ -223,9 +223,16 @@
       const admins = JSON.parse(localStorage.getItem('adeAdmins') || '[]');
 
       if (admins.filter(a => a.status === 'active').length >= 5) {
-        showToast('Maximum 5 admins allowed', 'error');
+        if (!confirm('100% sure you want to delete ALL admin records and start fresh?')) {
+          showToast('Operation cancelled', 'error');
+          return;
+        }
+        localStorage.removeItem('adeAdmins');
+        showToast('All admins deleted. You can now register new admins.', 'success');
+        setTimeout(() => window.location.reload(), 1200);
         return;
       }
+
       if (admins.find(a => a.email === email)) {
         showToast('An admin with this email already exists', 'error');
         return;
