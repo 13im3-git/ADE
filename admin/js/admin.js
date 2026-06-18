@@ -61,11 +61,8 @@ document.addEventListener('DOMContentLoaded', function() {
 function checkAuth() {
   const stored = localStorage.getItem('adeAdmins');
   if (!stored) {
-    const defaultAdmins = [
-      { username: 'ADMIN', password: '123', email: 'adenaturalcereals@gmail.com', role: 'superadmin', status: 'active' }
-    ];
-    localStorage.setItem('adeAdmins', JSON.stringify(defaultAdmins));
-    ADMIN_STATE.admins = defaultAdmins;
+    localStorage.setItem('adeAdmins', JSON.stringify([]));
+    ADMIN_STATE.admins = [];
   } else {
     ADMIN_STATE.admins = JSON.parse(stored);
   }
@@ -683,30 +680,88 @@ function deleteAdmin(email) {
 
 // ===== SETTINGS =====
 function renderSettings() {
+  const container = document.getElementById('tab-settings');
+  if (!container) return;
+
   if (!ADMIN_STATE.isSuperAdmin) {
-    const container = document.getElementById('tab-settings');
-    if (container) {
-      container.innerHTML = `
-        <div class="glass-card" style="text-align:center;padding:60px">
-          <i class="fas fa-lock" style="font-size:3rem;color:var(--gray-500);margin-bottom:16px;display:block"></i>
-          <h3 style="font-family:var(--font-sans);color:var(--gray-500);font-size:1rem">Settings restricted to Super Admin</h3>
-        </div>
-      `;
-    }
+    container.innerHTML = `
+      <div class="glass-card" style="text-align:center;padding:60px">
+        <i class="fas fa-lock" style="font-size:3rem;color:var(--gray-500);margin-bottom:16px;display:block"></i>
+        <h3 style="font-family:var(--font-sans);color:var(--gray-500);font-size:1rem">Settings restricted to Super Admin</h3>
+      </div>
+    `;
     return;
   }
-  
-  // Bank details form
-  const bankName = document.getElementById('setting-bank-name');
-  const accountName = document.getElementById('setting-account-name');
-  const accountNumber = document.getElementById('setting-account-number');
-  
-  if (bankName && !bankName.value) bankName.value = 'GTBank';
-  if (accountName && !accountName.value) accountName.value = 'ADE Natural Cereals';
-  if (accountNumber && !accountNumber.value) accountNumber.value = '0123 456 7890';
+
+  const settings = JSON.parse(localStorage.getItem('adeSettings') || '{}');
+
+  const fields = [
+    { id: 'setting-bank-name', placeholder: 'GTBank', value: settings.bankName || '' },
+    { id: 'setting-account-name', placeholder: 'ADE Natural Cereals', value: settings.accountName || '' },
+    { id: 'setting-account-number', placeholder: '0123 456 7890', value: settings.accountNumber || '' },
+    { id: 'setting-whatsapp', placeholder: '2348012345678', value: settings.whatsapp || '' },
+    { id: 'setting-instagram', placeholder: 'https://instagram.com/adenaturalcereals', value: settings.instagram || '' },
+    { id: 'setting-facebook', placeholder: 'https://facebook.com/adenaturalcereals', value: settings.facebook || '' },
+    { id: 'setting-twitter', placeholder: 'https://x.com/adenaturalcereals', value: settings.twitter || '' },
+    { id: 'setting-tiktok', placeholder: 'https://tiktok.com/@adenaturalcereals', value: settings.tiktok || '' },
+    { id: 'setting-contact-email', placeholder: 'adenaturalcereals@gmail.com', value: settings.contactEmail || '' },
+    { id: 'setting-contact-phone', placeholder: '2348012345678', value: settings.contactPhone || '' },
+    { id: 'setting-contact-address', placeholder: 'Lagos, Nigeria', value: settings.contactAddress || '' }
+  ];
+
+  container.innerHTML = `
+    <div class="glass-card">
+      <h3>Website Settings</h3>
+      <div class="form-row">
+        ${fields.slice(0,2).map(f => `
+          <div class="form-group">
+            <label>${f.id.replace('setting-','').replace('-',' ').replace(/\b\w/g, c => c.toUpperCase())}</label>
+            <input type="text" id="${f.id}" placeholder="${f.placeholder}" value="${f.value}">
+          </div>
+        `).join('')}
+      </div>
+      ${fields.slice(2,4).map(f => `
+        <div class="form-group">
+          <label>${f.id.replace('setting-','').replace('-',' ').replace(/\b\w/g, c => c.toUpperCase())}</label>
+          <input type="text" id="${f.id}" placeholder="${f.placeholder}" value="${f.value}">
+        </div>
+      `).join('')}
+      <h4 style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;margin:24px 0 12px;color:var(--gold)">Social Media</h4>
+      <div class="form-row">
+        ${fields.slice(4,10,2).map(f => `
+          <div class="form-group">
+            <label>${f.id.replace('setting-','').replace('-',' ').replace(/\b\w/g, c => c.toUpperCase())}</label>
+            <input type="text" id="${f.id}" placeholder="${f.placeholder}" value="${f.value}">
+          </div>
+        `).join('')}
+      </div>
+      <h4 style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;margin:24px 0 12px;color:var(--gold)">Contact</h4>
+      ${fields.slice(10).map(f => `
+        <div class="form-group">
+          <label>${f.id.replace('setting-','').replace('-',' ').replace(/\b\w/g, c => c.toUpperCase())}</label>
+          <input type="text" id="${f.id}" placeholder="${f.placeholder}" value="${f.value}">
+        </div>
+      `).join('')}
+      <button class="btn btn-gold" onclick="saveSettings()"><i class="fas fa-save"></i> Save Settings</button>
+    </div>
+  `;
 }
 
 function saveSettings() {
+  const settings = {
+    bankName: document.getElementById('setting-bank-name')?.value || '',
+    accountName: document.getElementById('setting-account-name')?.value || '',
+    accountNumber: document.getElementById('setting-account-number')?.value || '',
+    whatsapp: document.getElementById('setting-whatsapp')?.value || '',
+    instagram: document.getElementById('setting-instagram')?.value || '',
+    facebook: document.getElementById('setting-facebook')?.value || '',
+    twitter: document.getElementById('setting-twitter')?.value || '',
+    tiktok: document.getElementById('setting-tiktok')?.value || '',
+    contactEmail: document.getElementById('setting-contact-email')?.value || '',
+    contactPhone: document.getElementById('setting-contact-phone')?.value || '',
+    contactAddress: document.getElementById('setting-contact-address')?.value || ''
+  };
+  localStorage.setItem('adeSettings', JSON.stringify(settings));
   showToast('Settings saved successfully');
 }
 

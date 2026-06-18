@@ -259,12 +259,25 @@
             <h4 style="font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;color:var(--gold)">Add New Admin</h4>
             <div class="form-row">
               <div class="form-group">
-                <label>Full Name</label>
-                <input type="text" id="new-admin-name" placeholder="Enter admin name">
+                <label>Username</label>
+                <input type="text" id="new-admin-username" placeholder="Choose username">
               </div>
               <div class="form-group">
                 <label>Gmail Address</label>
                 <input type="email" id="new-admin-email" placeholder="admin@gmail.com">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="new-admin-password" placeholder="Create password">
+              </div>
+              <div class="form-group">
+                <label>Role</label>
+                <select id="new-admin-role">
+                  <option value="admin">Admin</option>
+                  <option value="superadmin">Super Admin</option>
+                </select>
               </div>
             </div>
             <button class="btn btn-gold" onclick="addAdmin()"><i class="fas fa-plus"></i> Add Admin</button>
@@ -303,8 +316,42 @@
             <input type="text" id="setting-account-number" placeholder="0123 456 7890">
           </div>
           <div class="form-group">
-            <label>WhatsApp Business Number</label>
+            <label>Whatsapp Business Number</label>
             <input type="text" id="setting-whatsapp" placeholder="2348012345678">
+          </div>
+          <h4 style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;margin:24px 0 12px;color:var(--gold)">Social Media</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Instagram</label>
+              <input type="text" id="setting-instagram" placeholder="https://instagram.com/adenaturalcereals">
+            </div>
+            <div class="form-group">
+              <label>Facebook</label>
+              <input type="text" id="setting-facebook" placeholder="https://facebook.com/adenaturalcereals">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Twitter</label>
+              <input type="text" id="setting-twitter" placeholder="https://x.com/adenaturalcereals">
+            </div>
+            <div class="form-group">
+              <label>Tiktok</label>
+              <input type="text" id="setting-tiktok" placeholder="https://tiktok.com/@adenaturalcereals">
+            </div>
+          </div>
+          <h4 style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;margin:24px 0 12px;color:var(--gold)">Contact</h4>
+          <div class="form-group">
+            <label>Contact Email</label>
+            <input type="text" id="setting-contact-email" placeholder="adenaturalcereals@gmail.com">
+          </div>
+          <div class="form-group">
+            <label>Contact Phone</label>
+            <input type="text" id="setting-contact-phone" placeholder="2348012345678">
+          </div>
+          <div class="form-group">
+            <label>Contact Address</label>
+            <input type="text" id="setting-contact-address" placeholder="Lagos, Nigeria">
           </div>
           <div style="margin-top:24px;padding-top:24px;border-top:1px solid var(--glass-border)">
             <h4 style="font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;color:var(--gold)">Sales Report</h4>
