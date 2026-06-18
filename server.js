@@ -27,14 +27,12 @@ const MIME_TYPES = {
 
 const server = http.createServer((req, res) => {
   let filePath = '.' + (req.url === '/' ? '/index.html' : req.url);
-
   const extname = path.extname(filePath);
   const contentType = MIME_TYPES[extname] || 'application/octet-stream';
 
   fs.readFile(filePath, (err, data) => {
     if (err) {
       if (err.code === 'ENOENT') {
-        // Try serving index.html for SPA-like routing
         fs.readFile('./index.html', (err2, data2) => {
           if (err2) {
             res.writeHead(500);
