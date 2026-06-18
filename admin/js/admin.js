@@ -1438,7 +1438,60 @@ function renderAnalyticsRecent(orders) {
 
 function renderAnalyticsTopProducts(orders) {
   const el = document.getElementById('analytics-top-products');
-  if (!el) return;
+  const tableBody = document.getElementById('analytics-top-products-table');
+  if (!el && !tableBody) return;
+
+  const map = new Map();
+  orders.forEach(o => {
+    (o.items || []).forEach(it => {
+      const name = it.name || 'Unknown';
+      if (!map.has(name)) {
+        map.set(name, { revenue: 0, units: 0, category: it.category || 'Other' });
+      }
+      const entry = map.get(name);
+      entry.revenue += (it.price || 0) * (it.quantity || 0);
+      entry.units += (it.quantity || 0);
+    });
+  });
+
+  const sorted = Array.from(map.entries()).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.revenue - a.revenue).slice(0, 10);
+  const max = sorted[0]?.revenue || 1;
+
+  if (el) {
+    if (sorted.length === 0) {
+      el.innerHTML = '<p style="color:var(--gray-500);padding:20px 0">No products sold yet</p>';
+    } else {
+      el.innerHTML = sorted.map(({ name, revenue }, idx) => `
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <div style="width:24px;height:24px;border-radius:50%;background:${idx < 3 ? 'var(--gold-gradient)' : 'var(--glass-bg)'};color:${idx < 3 ? 'var(--black)' : 'var(--gray-500)'};display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0">${idx + 1}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:0.8rem;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div>
+              <div style="height:4px;background:var(--glass-bg);border-radius:50px;overflow:hidden;margin-top:4px">
+                <div style="width:${Math.round((revenue/max)*100)}%;height:100%;background:linear-gradient(90deg, #FF69B4, #D4AF37);border-radius:50px"></div>
+              </div>
+            </div>
+            <div style="font-family:var(--font-display);color:var(--gold);font-size:0.8rem;font-weight:700;margin-left:8px">${formatPrice(revenue)}</div>
+          </div>
+        `).join('');
+    }
+  }
+
+  if (tableBody) {
+    if (sorted.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--gray-500)">No products sold yet</td></tr>';
+    } else {
+      tableBody.innerHTML = sorted.map(({ name, category, units, revenue }, idx) => `
+          <tr>
+            <td style="font-weight:600;color:var(--gold)">${idx + 1}</td>
+            <td>${name}</td>
+            <td><span style="text-transform:capitalize">${category}</span></td>
+            <td>${units}</td>
+            <td style="color:var(--gold);font-weight:700;font-family:var(--font-display)">${formatPrice(revenue)}</td>
+          </tr>
+        `).join('');
+    }
+  }
+}
   const map = {};
   orders.forEach(o => {
     o.items.forEach(it => {
