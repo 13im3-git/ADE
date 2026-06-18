@@ -1097,7 +1097,16 @@ function saveSettings() {
     tiktok: document.getElementById('setting-tiktok')?.value || '',
     contactEmail: document.getElementById('setting-contact-email')?.value || '',
     contactPhone: document.getElementById('setting-contact-phone')?.value || '',
-    contactAddress: document.getElementById('setting-contact-address')?.value || ''
+    contactAddress: document.getElementById('setting-contact-address')?.value || '',
+    smtpHost: document.getElementById('setting-smtp-host')?.value || '',
+    smtpPort: document.getElementById('setting-smtp-port')?.value || '',
+    smtpEmail: document.getElementById('setting-smtp-email')?.value || '',
+    smtpPassword: document.getElementById('setting-smtp-password')?.value || '',
+    smtpSecure: document.getElementById('setting-smtp-secure')?.value || 'true',
+    footerDescription: document.getElementById('setting-footer-description')?.value || '',
+    footerCopyright: document.getElementById('setting-footer-copyright')?.value || '',
+    footerEmail: document.getElementById('setting-footer-email')?.value || '',
+    footerPhone: document.getElementById('setting-footer-phone')?.value || ''
   };
   localStorage.setItem('adeSettings', JSON.stringify(settings));
   showToast('Settings saved successfully');

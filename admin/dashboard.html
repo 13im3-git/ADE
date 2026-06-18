@@ -361,6 +361,53 @@
             <label>Contact Address</label>
             <input type="text" id="setting-contact-address" placeholder="Lagos, Nigeria">
           </div>
+          <h4 style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;margin:24px 0 12px;color:var(--gold)">SMTP / Email Settings</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>SMTP Host</label>
+              <input type="text" id="setting-smtp-host" placeholder="smtp.gmail.com">
+            </div>
+            <div class="form-group">
+              <label>SMTP Port</label>
+              <input type="text" id="setting-smtp-port" placeholder="587">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>SMTP Username / Email</label>
+              <input type="email" id="setting-smtp-email" placeholder="noreply@adenaturalcereals.com">
+            </div>
+            <div class="form-group">
+              <label>SMTP Password</label>
+              <input type="password" id="setting-smtp-password" placeholder="••••••••">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>SMTP Secure (SSL/TLS)</label>
+            <select id="setting-smtp-secure">
+              <option value="true">Yes (SSL/TLS)</option>
+              <option value="false">No (TLS optional)</option>
+            </select>
+          </div>
+          <h4 style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;margin:24px 0 12px;color:var(--gold)">Footer Content</h4>
+          <div class="form-group">
+            <label>Footer Description</label>
+            <textarea class="form-input" id="setting-footer-description" rows="2" placeholder="ADE Natural Cereals — premium weight gain and body enhancement products."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Footer Copyright</label>
+            <input type="text" id="setting-footer-copyright" placeholder="© 2026 ADE Natural Cereals. All rights reserved.">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Footer Email</label>
+              <input type="email" id="setting-footer-email" placeholder="adenaturalcereals@gmail.com">
+            </div>
+            <div class="form-group">
+              <label>Footer Phone</label>
+              <input type="text" id="setting-footer-phone" placeholder="2348012345678">
+            </div>
+          </div>
           <button class="btn btn-gold" onclick="saveSettings()"><i class="fas fa-save"></i> Save Settings</button>
         </div>
       </div>
