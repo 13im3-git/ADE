@@ -1244,8 +1244,18 @@ function renderAnalytics() {
   renderAnalyticsStatusBreakdown(orders);
   renderAnalyticsBestCategory(orders);
   renderAnalyticsCategories(orders);
+  renderAnalyticsCategoryChart(orders);
   renderAnalyticsTopProducts(orders);
   renderAnalyticsRecent(orders);
+}
+
+function setTrendRange(days) {
+  const input = document.getElementById('analytics-range');
+  if (input) input.value = days;
+  document.querySelectorAll('.trend-range').forEach(btn => {
+    btn.classList.toggle('active', Number(btn.dataset.range) === days);
+  });
+  renderAnalytics();
 }
 
 function renderAnalyticsStatusBreakdown(orders) {
@@ -1370,6 +1380,41 @@ function renderAnalyticsCategories(orders) {
       </div>
     </div>
   `).join('');
+}
+
+function renderAnalyticsCategoryChart(orders) {
+  const el = document.getElementById('analytics-category-chart');
+  if (!el) return;
+  const map = {};
+  orders.forEach(o => {
+    o.items.forEach(it => {
+      const cat = it.category || 'Other';
+      map[cat] = (map[cat] || 0) + (it.price * it.quantity);
+    });
+  });
+  const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const max = sorted[0]?.[1] || 1;
+  if (sorted.length === 0) {
+    el.innerHTML = '<p style="color:var(--gray-500);padding:20px 0">No category data yet</p>';
+    return;
+  }
+  const palette = ['#FF69B4', '#D4AF37', '#2196F3', '#4CAF50', '#FFC107', '#9C27B0', '#FF5722', '#00BCD4'];
+  el.innerHTML = `
+    <div style="display:flex;align-items:flex-end;gap:8px;height:180px;padding-top:8px">
+      ${sorted.map(([cat, val], idx) => {
+        const h = Math.max(4, Math.round((val / max) * 160));
+        const color = palette[idx % palette.length];
+        return `
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
+            <div style="font-size:0.65rem;color:var(--gray-500);font-weight:600">${formatPrice(val)}</div>
+            <div style="width:100%;height:${h}px;background:${color};border-radius:6px 6px 0 0;opacity:0.9"></div>
+            <div style="font-size:0.65rem;color:var(--gray-500);text-align:center;word-break:break-word;line-height:1.1">${cat}</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+    <div style="height:20px"></div>
+  `;
 }
 
 function renderAnalyticsRecent(orders) {
