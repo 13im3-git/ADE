@@ -600,7 +600,7 @@ function addAdmin() {
     showToast('Only Super Admin can add admins', 'error');
     return;
   }
-  if (ADMIN_STATE.admins.length >= 5) {
+  if (ADMIN_STATE.admins.filter(a => a.status === 'active').length >= 5) {
     showToast('Maximum 5 admins allowed', 'error');
     return;
   }

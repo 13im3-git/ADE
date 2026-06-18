@@ -222,7 +222,7 @@
 
       const admins = JSON.parse(localStorage.getItem('adeAdmins') || '[]');
 
-      if (admins.length >= 5) {
+      if (admins.filter(a => a.status === 'active').length >= 5) {
         showToast('Maximum 5 admins allowed', 'error');
         return;
       }
