@@ -347,6 +347,29 @@ function openProductModal(productId) {
         <label class="form-label">Image</label>
         <input type="file" class="form-input" id="prod-image" accept="image/*">
         ${isEdit && product.image ? `<img src="${product.image}" style="margin-top:8px;max-height:120px;border-radius:8px">` : ''}
+      <div class="form-group">
+        <label class="form-label">SKU (optional)</label>
+        <input type="text" class="form-input" id="prod-sku" placeholder="ADE-WG-001">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Weight / Volume (optional)</label>
+        <input type="text" class="form-input" id="prod-weight" placeholder="1kg / 500g / 500ml">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Short Description</label>
+        <textarea class="form-input" id="prod-description" rows="3" placeholder="What this product is, who it's for, and why it works."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Key Benefits (one per line)</label>
+        <textarea class="form-input" id="prod-features" rows="3" placeholder="Supports healthy weight gain&#10;Boosts energy naturally&#10;Rich in vitamins and minerals"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Key Ingredients (optional)</label>
+        <input type="text" class="form-input" id="prod-ingredients" placeholder="Oats, Millelet, Soy, Crayfish...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Usage Instructions (optional)</label>
+        <textarea class="form-input" id="prod-usage" rows="2" placeholder="Mix 2 scoops with milk or yogurt..."></textarea>
       </div>
       <button type="submit" class="btn btn-gold" style="width:100%">
         <i class="fas fa-save"></i> ${isEdit ? 'Update' : 'Create'} Product
@@ -362,19 +385,39 @@ function saveProduct(event, productId) {
   const category = document.getElementById('prod-category').value;
   const originalPrice = Number(document.getElementById('prod-original').value);
   const salePrice = Number(document.getElementById('prod-sale').value) || originalPrice;
+  const sku = document.getElementById('prod-sku').value.trim();
+  const weight = document.getElementById('prod-weight').value.trim();
+  const description = document.getElementById('prod-description').value.trim();
+  const features = document.getElementById('prod-features').value.trim().split('\n').filter(Boolean);
+  const ingredients = document.getElementById('prod-ingredients').value.trim();
+  const usage = document.getElementById('prod-usage').value.trim();
   const imageInput = document.getElementById('prod-image');
   if (!name || !originalPrice) { showToast('Name and price required', 'error'); return; }
   const save = (imageData) => {
     let products = [];
     try { if (typeof PRODUCTS !== 'undefined') products = JSON.parse(JSON.stringify(PRODUCTS)); } catch(e) { products = []; }
+    const productData = {
+      id: productId || ('prod_' + Date.now()),
+      name,
+      category,
+      originalPrice,
+      salePrice,
+      sku,
+      weight,
+      description,
+      features,
+      ingredients,
+      usage,
+      image: imageData || ''
+    };
     if (productId) {
       const idx = products.findIndex(p => p.id === productId);
       if (idx > -1) {
-        products[idx] = { ...products[idx], name, category, originalPrice, salePrice };
+        products[idx] = { ...products[idx], ...productData };
         if (imageData) products[idx].image = imageData;
       }
     } else {
-      products.push({ id: 'prod_' + Date.now(), name, category, originalPrice, salePrice, image: imageData || '' });
+      products.push(productData);
     }
     localStorage.setItem('adeProducts', JSON.stringify(products));
     try { if (typeof PRODUCTS !== 'undefined') PRODUCTS = products; } catch(e) {}
@@ -450,13 +493,14 @@ function renderProducts() {
   } catch(e) {}
   
   if (products.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:60px;color:var(--gray-500)">No products found. Add your first product below.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:60px;color:var(--gray-500)">No products found. Add your first product below.</td></tr><tr><td colspan="8" style="padding:12px 16px"><button class="btn btn-gold" onclick="openProductModal(\'\')" style="width:100%"><i class="fas fa-plus"></i> Add New Product</button></td></tr>';
+    return;
   }
   
   // Global sales toggle row
   const globalToggle = `
     <tr style="background:rgba(255,105,180,0.05)">
-      <td colspan="6" style="padding:12px 16px;border-bottom:2px solid rgba(255,105,180,0.2)">
+      <td colspan="7" style="padding:12px 16px;border-bottom:2px solid rgba(255,105,180,0.2)">
         <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
           <span style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--gray-500);font-weight:600">🌙 Global Sales Mode</span>
           <label class="toggle-switch" style="position:relative;width:48px;height:26px;cursor:pointer;display:inline-block">
@@ -472,7 +516,7 @@ function renderProducts() {
   
   const addRow = `
     <tr>
-      <td colspan="6" style="padding:12px 16px">
+      <td colspan="7" style="padding:12px 16px">
         <button class="btn btn-primary" onclick="openProductModal('')" style="width:100%">
           <i class="fas fa-plus"></i> Add New Product
         </button>
@@ -491,10 +535,14 @@ function renderProducts() {
           <div style="width:40px;height:40px;border-radius:8px;background:var(--black-elevated);display:flex;align-items:center;justify-content:center">
             <i class="fas fa-box" style="color:var(--gold);font-size:1rem"></i>
           </div>
-          <span>${p.name}</span>
+          <div>
+            <div>${p.name}</div>
+            ${p.sku ? `<div style="font-size:0.7rem;color:var(--gray-500)">${p.sku}</div>` : ''}
+          </div>
         </div>
       </td>
       <td>${p.category}</td>
+      <td>${p.weight || '-'}</td>
       <td>${formatPrice(p.originalPrice)}</td>
       <td style="color:var(--gold);font-weight:600">${formatPrice(p.salePrice)}</td>
       <td>
