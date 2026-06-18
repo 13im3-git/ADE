@@ -193,15 +193,25 @@
         return;
       }
       
-      // Check against stored admins
+      // Allow any @gmail.com login
+      if (!username.includes('@gmail.com')) {
+        showToast('Please use a Gmail address', 'error');
+        return;
+      }
+      
       const admins = JSON.parse(localStorage.getItem('adeAdmins') || '[]');
-      const admin = admins.find(a => 
-        (a.email === username || a.name.toLowerCase() === username.toLowerCase()) && a.status === 'active'
-      );
+      let admin = admins.find(a => a.email === username && a.status === 'active');
       
       if (!admin) {
-        showToast('Invalid username or password', 'error');
-        return;
+        // Auto-create admin for new Gmail user
+        admin = {
+          email: username,
+          name: username.split('@')[0],
+          role: 'admin',
+          status: 'active'
+        };
+        admins.push(admin);
+        localStorage.setItem('adeAdmins', JSON.stringify(admins));
       }
       
       // Simple password check (in production, use hashed passwords)
