@@ -59,47 +59,38 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function checkAuth() {
-  // Check if admin data exists in localStorage
   const stored = localStorage.getItem('adeAdmins');
   if (!stored) {
     const defaultAdmins = [
-      { email: 'superadmin@ade.com', name: 'Super Admin', role: 'superadmin', status: 'active' },
-      { email: 'admin1@ade.com', name: 'Admin One', role: 'admin', status: 'active' },
-      { email: 'admin2@ade.com', name: 'Admin Two', role: 'admin', status: 'active' },
-      { email: 'admin3@ade.com', name: 'Admin Three', role: 'admin', status: 'active' },
-      { email: 'admin4@ade.com', name: 'Admin Four', role: 'admin', status: 'active' }
+      { username: 'ADMIN', password: '123', email: 'adenaturalcereals@gmail.com', role: 'superadmin', status: 'active' }
     ];
     localStorage.setItem('adeAdmins', JSON.stringify(defaultAdmins));
     ADMIN_STATE.admins = defaultAdmins;
   } else {
     ADMIN_STATE.admins = JSON.parse(stored);
   }
-  
-  // Check which admin is logged in via URL or prompt
-  const urlParams = new URLSearchParams(window.location.search);
-  const email = urlParams.get('email') || prompt('Enter admin email for verification:');
-  
-  if (email) {
-    const admin = ADMIN_STATE.admins.find(a => a.email === email && a.status === 'active');
-    if (admin) {
-      ADMIN_STATE.currentAdmin = admin;
-      ADMIN_STATE.isSuperAdmin = admin.role === 'superadmin';
-      
-      // Update UI with admin info
-      const nameEl = document.getElementById('admin-name');
-      const roleEl = document.getElementById('admin-role');
-      const avatarEl = document.getElementById('admin-avatar');
-      if (nameEl) nameEl.textContent = admin.name;
-      if (roleEl) roleEl.textContent = admin.role === 'superadmin' ? 'Super Admin' : 'Admin';
-      if (avatarEl) avatarEl.textContent = admin.name.split(' ').map(n => n[0]).join('');
-      
-      return;
+
+  const session = sessionStorage.getItem('adeAdminSession');
+  if (session) {
+    try {
+      const data = JSON.parse(session);
+      const admin = ADMIN_STATE.admins.find(a => a.email === data.email && a.status === 'active');
+      if (admin) {
+        ADMIN_STATE.currentAdmin = admin;
+        ADMIN_STATE.isSuperAdmin = admin.role === 'superadmin';
+        updateAdminUI();
+      }
+    } catch (e) {
+      sessionStorage.removeItem('adeAdminSession');
     }
   }
-  
-  // If not authorized, redirect to main site
-  showToast('Access denied. Please login with an authorized admin email.', 'error');
-  setTimeout(() => window.location.href = '../index.html', 2000);
+
+  if (!ADMIN_STATE.currentAdmin) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  updateAdminUI();
 }
 
 function initAdmin() {
@@ -320,6 +311,100 @@ function closeAdminModal() {
   if (modal) modal.classList.remove('active');
 }
 
+// ===== PRODUCT MODAL (ALL ADMINS) =====
+function openProductModal(productId) {
+  const modal = document.getElementById('admin-modal');
+  const content = document.getElementById('admin-modal-content');
+  if (!modal || !content) return;
+  const isEdit = !!productId;
+  let product = null;
+  if (isEdit) {
+    try { product = (typeof PRODUCTS !== 'undefined' ? PRODUCTS : []).find(p => p.id === productId); } catch(e) {}
+    if (!product) { showToast('Product not found', 'error'); return; }
+  }
+  content.innerHTML = `
+    <button class="modal-close" onclick="closeAdminModal()"><i class="fas fa-times"></i></button>
+    <h3 style="font-family:var(--font-display);font-size:1.3rem;margin-bottom:20px">${isEdit ? 'Edit Product' : 'Add Product'}</h3>
+    <form id="product-form" onsubmit="saveProduct(event, '${productId || ''}')">
+      <div class="form-group">
+        <label class="form-label">Product Name</label>
+        <input type="text" class="form-input" id="prod-name" value="${isEdit ? product.name : ''}" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select class="form-select" id="prod-category">
+          ${['weight-gain','hips-and-butt','slimthick','flat-tummy','breast-kit','other-products','complete-sets'].map(c => `<option value="${c}" ${isEdit && product.category === c ? 'selected' : ''}>${c}</option>`).join('')}
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group">
+          <label class="form-label">Original Price (₦)</label>
+          <input type="number" class="form-input" id="prod-original" value="${isEdit ? product.originalPrice : ''}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sale Price (₦)</label>
+          <input type="number" class="form-input" id="prod-sale" value="${isEdit && product.salePrice ? product.salePrice : ''}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Image</label>
+        <input type="file" class="form-input" id="prod-image" accept="image/*">
+        ${isEdit && product.image ? `<img src="${product.image}" style="margin-top:8px;max-height:120px;border-radius:8px">` : ''}
+      </div>
+      <button type="submit" class="btn btn-gold" style="width:100%">
+        <i class="fas fa-save"></i> ${isEdit ? 'Update' : 'Create'} Product
+      </button>
+    </form>
+  `;
+  modal.classList.add('active');
+}
+
+function saveProduct(event, productId) {
+  event.preventDefault();
+  const name = document.getElementById('prod-name').value.trim();
+  const category = document.getElementById('prod-category').value;
+  const originalPrice = Number(document.getElementById('prod-original').value);
+  const salePrice = Number(document.getElementById('prod-sale').value) || originalPrice;
+  const imageInput = document.getElementById('prod-image');
+  if (!name || !originalPrice) { showToast('Name and price required', 'error'); return; }
+  const save = (imageData) => {
+    let products = [];
+    try { if (typeof PRODUCTS !== 'undefined') products = JSON.parse(JSON.stringify(PRODUCTS)); } catch(e) { products = []; }
+    if (productId) {
+      const idx = products.findIndex(p => p.id === productId);
+      if (idx > -1) {
+        products[idx] = { ...products[idx], name, category, originalPrice, salePrice };
+        if (imageData) products[idx].image = imageData;
+      }
+    } else {
+      products.push({ id: 'prod_' + Date.now(), name, category, originalPrice, salePrice, image: imageData || '' });
+    }
+    localStorage.setItem('adeProducts', JSON.stringify(products));
+    try { if (typeof PRODUCTS !== 'undefined') PRODUCTS = products; } catch(e) {}
+    showToast(productId ? 'Product updated' : 'Product created');
+    closeAdminModal();
+    renderProducts();
+  };
+  if (imageInput && imageInput.files && imageInput.files[0]) {
+    const reader = new FileReader();
+    reader.onload = (e) => save(e.target.result);
+    reader.readAsDataURL(imageInput.files[0]);
+  } else {
+    save(null);
+  }
+}
+
+function deleteProduct(productId) {
+  if (!confirm('Delete this product?')) return;
+  let products = [];
+  try { if (typeof PRODUCTS !== 'undefined') products = JSON.parse(JSON.stringify(PRODUCTS)); } catch(e) { products = []; }
+  products = products.filter(p => p.id !== productId);
+  localStorage.setItem('adeProducts', JSON.stringify(products));
+  try { if (typeof PRODUCTS !== 'undefined') PRODUCTS = products; } catch(e) {}
+  showToast('Product deleted');
+  renderProducts();
+}
+
 // ===== PRODUCTS =====
 // ===== SALES CONTROL (ADMIN) =====
 function toggleAdminGlobalSales() {
@@ -368,8 +453,7 @@ function renderProducts() {
   } catch(e) {}
   
   if (products.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:60px;color:var(--gray-500)">Load main site first or add products</td></tr>';
-    return;
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:60px;color:var(--gray-500)">No products found. Add your first product below.</td></tr>';
   }
   
   // Global sales toggle row
@@ -389,7 +473,17 @@ function renderProducts() {
     </tr>
   `;
   
-  tbody.innerHTML = globalToggle + products.map(p => {
+  const addRow = `
+    <tr>
+      <td colspan="6" style="padding:12px 16px">
+        <button class="btn btn-primary" onclick="openProductModal('')" style="width:100%">
+          <i class="fas fa-plus"></i> Add New Product
+        </button>
+      </td>
+    </tr>
+  `;
+  
+  tbody.innerHTML = globalToggle + (products.length === 0 ? '' : addRow) + products.map(p => {
     const saleActive = hasAdminSaleActive(p);
     const po = ADMIN_STATE.productSales[p.id];
     const checked = po === true || (po === undefined && ADMIN_STATE.globalSalesEnabled && p.salePrice && p.salePrice < p.originalPrice);
@@ -414,8 +508,8 @@ function renderProducts() {
         </label>
       </td>
       <td>
-        <button class="btn btn-ghost btn-sm" onclick="showToast('Edit product - Coming soon')"><i class="fas fa-edit"></i></button>
-        <button class="btn btn-danger btn-sm" onclick="showToast('Delete product - Coming soon')"><i class="fas fa-trash"></i></button>
+        <button class="btn btn-gold btn-sm" onclick="openProductModal('${p.id}')"><i class="fas fa-edit"></i> Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}')"><i class="fas fa-trash"></i></button>
       </td>
     </tr>
   `}).join('');
@@ -474,10 +568,10 @@ function renderAdmins() {
       <td>
         <div style="display:flex;align-items:center;gap:10px">
           <div style="width:36px;height:36px;border-radius:50%;background:var(--gold-gradient);color:var(--black);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem">
-            ${a.name.split(' ').map(n => n[0]).join('')}
+            ${(a.username || a.email).slice(0,2).toUpperCase()}
           </div>
           <div>
-            <div style="font-weight:600;color:var(--white);font-size:0.85rem">${a.name}</div>
+            <div style="font-weight:600;color:var(--white);font-size:0.85rem">${a.username || a.email}</div>
             <div style="font-size:0.7rem;color:var(--gray-500)">${a.email}</div>
           </div>
         </div>
@@ -509,43 +603,60 @@ function addAdmin() {
     showToast('Only Super Admin can add admins', 'error');
     return;
   }
-  
-  const nameInput = document.getElementById('new-admin-name');
+  if (ADMIN_STATE.admins.length >= 5) {
+    showToast('Maximum 5 admins allowed', 'error');
+    return;
+  }
+
+  const usernameInput = document.getElementById('new-admin-username');
   const emailInput = document.getElementById('new-admin-email');
-  
-  if (!nameInput || !emailInput) return;
-  
-  const name = nameInput.value.trim();
+  const passwordInput = document.getElementById('new-admin-password');
+  const roleInput = document.getElementById('new-admin-role');
+
+  if (!usernameInput || !emailInput || !passwordInput || !roleInput) return;
+
+  const username = usernameInput.value.trim();
   const email = emailInput.value.trim();
-  
-  if (!name || !email) {
+  const password = passwordInput.value.trim();
+  const role = roleInput.value;
+
+  if (!username || !email || !password) {
     showToast('Please fill all fields', 'error');
     return;
   }
-  
-  if (ADMIN_STATE.admins.find(a => a.email === email)) {
-    showToast('Admin with this email already exists', 'error');
+  if (!email.endsWith('@gmail.com')) {
+    showToast('Only Gmail addresses allowed', 'error');
     return;
   }
-  
+  if (ADMIN_STATE.admins.find(a => a.email === email)) {
+    showToast('Admin already exists', 'error');
+    return;
+  }
+  if (role === 'superadmin' && ADMIN_STATE.admins.some(a => a.role === 'superadmin')) {
+    showToast('Only one super admin allowed', 'error');
+    return;
+  }
+
   ADMIN_STATE.admins.push({
-    email: email,
-    name: name,
-    role: 'admin',
+    username,
+    email,
+    password,
+    role,
     status: 'active'
   });
-  
+
   localStorage.setItem('adeAdmins', JSON.stringify(ADMIN_STATE.admins));
-  
-  nameInput.value = '';
+  usernameInput.value = '';
   emailInput.value = '';
-  
+  passwordInput.value = '';
+
   showToast('Admin added successfully');
   renderAdmins();
 }
 
 function toggleAdminStatus(email) {
   if (!ADMIN_STATE.isSuperAdmin) return;
+  if (email === ADMIN_STATE.currentAdmin?.email) return;
   
   const admin = ADMIN_STATE.admins.find(a => a.email === email);
   if (!admin) return;
@@ -559,6 +670,7 @@ function toggleAdminStatus(email) {
 
 function deleteAdmin(email) {
   if (!ADMIN_STATE.isSuperAdmin) return;
+  if (email === ADMIN_STATE.currentAdmin?.email) return;
   
   if (!confirm('Are you sure you want to delete this admin?')) return;
   

@@ -157,8 +157,8 @@
       
       <form id="registerForm" onsubmit="handleRegister(event)">
         <div class="form-group">
-          <label class="form-label">Full Name</label>
-          <input type="text" class="form-input" id="reg-name" placeholder="Enter full name" required>
+          <label class="form-label">Username</label>
+          <input type="text" class="form-input" id="reg-username" placeholder="Choose a username" required>
         </div>
         <div class="form-group">
           <label class="form-label">Gmail Address</label>
@@ -168,21 +168,12 @@
           <label class="form-label">Password</label>
           <input type="password" class="form-input" id="reg-password" placeholder="Create password" required minlength="4">
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Role</label>
-            <select class="form-select" id="reg-role">
-              <option value="admin">Admin</option>
-              <option value="superadmin">Super Admin</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Status</label>
-            <select class="form-select" id="reg-status">
-              <option value="active">Active</option>
-              <option value="suspended">Suspended</option>
-            </select>
-          </div>
+        <div class="form-group">
+          <label class="form-label">Role</label>
+          <select class="form-select" id="reg-role">
+            <option value="admin">Admin</option>
+            <option value="superadmin">Super Admin</option>
+          </select>
         </div>
         <button type="submit" class="btn-register">
           <i class="fas fa-user-plus"></i> Register Admin
@@ -215,41 +206,45 @@
     
     function handleRegister(event) {
       event.preventDefault();
-      const name = document.getElementById('reg-name').value.trim();
+      const username = document.getElementById('reg-username').value.trim();
       const email = document.getElementById('reg-email').value.trim();
       const password = document.getElementById('reg-password').value.trim();
       const role = document.getElementById('reg-role').value;
-      const status = document.getElementById('reg-status').value;
-      
-      if (!name || !email || !password) {
+
+      if (!username || !email || !password) {
         showToast('Please fill in all fields', 'error');
         return;
       }
-      
-      if (!email.includes('@gmail.com')) {
+      if (!email.endsWith('@gmail.com')) {
         showToast('Only Gmail addresses are allowed', 'error');
         return;
       }
-      
+
       const admins = JSON.parse(localStorage.getItem('adeAdmins') || '[]');
-      
-      // Check if email already exists
+
+      if (admins.length >= 5) {
+        showToast('Maximum 5 admins allowed', 'error');
+        return;
+      }
       if (admins.find(a => a.email === email)) {
         showToast('An admin with this email already exists', 'error');
         return;
       }
-      
-      // Add new admin
+      if (role === 'superadmin' && admins.some(a => a.role === 'superadmin')) {
+        showToast('Only one super admin allowed', 'error');
+        return;
+      }
+
       admins.push({
-        email: email,
-        name: name,
-        role: role,
-        status: status
+        username,
+        email,
+        password,
+        role,
+        status: 'active'
       });
-      
+
       localStorage.setItem('adeAdmins', JSON.stringify(admins));
-      localStorage.setItem('adeAdminPass_' + email, password);
-      
+
       showToast('Admin registered successfully!', 'success');
       setTimeout(() => {
         window.location.href = 'login.html';
