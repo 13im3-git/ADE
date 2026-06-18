@@ -16,7 +16,7 @@
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
+  <script> 
     tailwind.config = {
       theme: {
         extend: {
@@ -119,8 +119,11 @@
     <a href="#" data-page="faq" onclick="navigateTo('faq')">FAQ</a>
     <a href="#" data-page="contact" onclick="navigateTo('contact')">Contact</a>
     <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--glass-border)">
-      <button class="btn btn-primary" style="width:100%" onclick="loginWithGoogle()">
-        <i class="fab fa-google"></i> Admin Login
+      <button class="btn btn-primary" style="width:100%;margin-bottom:10px" onclick="window.location.href='admin/login.html'">
+        <i class="fas fa-user-lock"></i> Admin Login
+      </button>
+      <button class="btn btn-secondary" style="width:100%" onclick="window.location.href='admin/register.html'">
+        <i class="fas fa-user-plus"></i> Register
       </button>
     </div>
   </nav>
@@ -694,6 +697,8 @@
             <a href="#" onclick="navigateTo('faq')">FAQ</a>
             <a href="#" onclick="navigateTo('contact')">Contact Us</a>
             <a href="#" onclick="openWhatsAppChat()">WhatsApp Support</a>
+            <a href="admin/login.html">Admin Login</a>
+            <a href="admin/register.html">Admin Register</a>
             <a href="#">Privacy Policy</a>
             <a href="#">Terms of Service</a>
           </div>
