@@ -26,11 +26,6 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer((req, res) => {
-  if (req.url === '/healthz') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ ok: true, ts: Date.now() }));
-    return;
-  }
   let filePath = '.' + (req.url === '/' ? '/index.html' : req.url);
   const extname = path.extname(filePath);
   const contentType = MIME_TYPES[extname] || 'application/octet-stream';
