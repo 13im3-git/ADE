@@ -913,6 +913,17 @@ function renderAdmins() {
   }
 }
 
+function toggleAddAdminForm() {
+  const addForm = document.getElementById('add-admin-form');
+  if (!addForm) return;
+  const isVisible = addForm.style.display !== 'none';
+  addForm.style.display = isVisible ? 'none' : 'block';
+  if (!isVisible) {
+    const firstInput = addForm.querySelector('input');
+    if (firstInput) setTimeout(() => firstInput.focus(), 50);
+  }
+}
+
 function addAdmin() {
   if (!ADMIN_STATE.isSuperAdmin) {
     showToast('Only Super Admin can add admins', 'error');
@@ -1210,38 +1221,24 @@ function renderAnalytics() {
   const cutoff = now - rangeVal * 24 * 60 * 60 * 1000;
   const orders = (ADMIN_STATE.orders || []).filter(o => new Date(o.date || o.orderNumber).getTime() >= cutoff);
 
-  const totalRevenue = orders.filter(o => o.status !== 'cancelled').reduce((sum, o) => sum + (o.total || 0), 0);
-  const totalOrders = orders.length;
-  const avgOrder = totalOrders ? Math.round(totalRevenue / totalOrders) : 0;
-  const uniqueCustomers = new Set(orders.map(o => o.customer?.phone).filter(Boolean)).size;
-  const pendingOrders = orders.filter(o => o.status === 'pending').length;
-  const processingOrders = orders.filter(o => o.status === 'processing').length;
-  const shippedOrders = orders.filter(o => o.status === 'shipped').length;
-  const deliveredOrders = orders.filter(o => o.status === 'delivered').length;
-  const completedOrders = orders.filter(o => o.status === 'delivered').length;
-  const completionRate = totalOrders ? Math.round((completedOrders / totalOrders) * 100) : 0;
-  const revenuePerCustomer = uniqueCustomers ? Math.round(totalRevenue / uniqueCustomers) : 0;
+  const productsSold = orders.reduce((sum, o) => {
+    return sum + (o.items || []).reduce((s, it) => s + (it.quantity || 0), 0);
+  }, 0);
+  const activeCustomers = uniqueCustomers;
+  const conversionRate = totalOrders ? Math.round((uniqueCustomers / Math.max(1, totalOrders)) * 100) : 0;
 
   const revenueEl = document.getElementById('analytics-revenue');
   const ordersEl = document.getElementById('analytics-orders');
   const avgEl = document.getElementById('analytics-avg');
-  const customersEl = document.getElementById('analytics-customers');
-  const pendingEl = document.getElementById('analytics-pending');
-  const processingEl = document.getElementById('analytics-processing');
-  const shippedEl = document.getElementById('analytics-shipped');
-  const deliveredEl = document.getElementById('analytics-delivered');
-  const completionEl = document.getElementById('analytics-completion');
-  const revPerCustEl = document.getElementById('analytics-revenue-per-customer');
+  const productsSoldEl = document.getElementById('analytics-products-sold');
+  const activeCustomersEl = document.getElementById('analytics-active-customers');
+  const conversionEl = document.getElementById('analytics-conversion');
   if (revenueEl) revenueEl.textContent = formatPrice(totalRevenue);
   if (ordersEl) ordersEl.textContent = totalOrders;
   if (avgEl) avgEl.textContent = formatPrice(avgOrder);
-  if (customersEl) customersEl.textContent = uniqueCustomers;
-  if (pendingEl) pendingEl.textContent = pendingOrders;
-  if (processingEl) processingEl.textContent = processingOrders;
-  if (shippedEl) shippedEl.textContent = shippedOrders;
-  if (deliveredEl) deliveredEl.textContent = deliveredOrders;
-  if (completionEl) completionEl.textContent = completionRate + '%';
-  if (revPerCustEl) revPerCustEl.textContent = formatPrice(revenuePerCustomer);
+  if (productsSoldEl) productsSoldEl.textContent = productsSold;
+  if (activeCustomersEl) activeCustomersEl.textContent = activeCustomers;
+  if (conversionEl) conversionEl.textContent = conversionRate + '%';
 
   renderAnalyticsChart(orders, cutoff, now);
   renderAnalyticsStatusBreakdown(orders);
