@@ -10,7 +10,18 @@ const ADMIN_STATE = {
   admins: JSON.parse(localStorage.getItem('adeAdmins') || '[]'),
   isSuperAdmin: false,
   currentAdmin: null,
-  trendRange: 30
+  trendRange: 30,
+  advancedFilters: {
+    startDate: '',
+    endDate: '',
+    categories: [],
+    productSearch: '',
+    paymentMethod: '',
+    status: '',
+    customerSegment: '',
+    minPrice: null,
+    maxPrice: null
+  }
 };
 
 // ===== DOM HELPERS =====
@@ -114,7 +125,7 @@ function initAdmin() {
   if (storedOrders) {
     ADMIN_STATE.orders = JSON.parse(storedOrders);
   }
-  switchTab('dashboard');
+  switchTab('analytics');
 }
 
 function initMobileToggle() {
@@ -162,11 +173,45 @@ function renderDashboard() {
   const statPending = document.getElementById('stat-pending');
   const statRevenue = document.getElementById('stat-revenue');
   const statCustomers = document.getElementById('stat-customers');
+  const netRevenue = document.getElementById('stat-net-revenue');
+  const pendingRevenue = document.getElementById('stat-revenue-growth');
+  const aov = document.getElementById('stat-aov');
+  const productsSold = document.getElementById('stat-products-sold');
+  const refundRate = document.getElementById('stat-refund-rate');
+  const aovTrend = document.getElementById('stat-aov-trend');
+  const profitMargin = document.getElementById('stat-profit-margin');
+
+  const completedOrders = orders.filter(o => o.status !== 'cancelled');
+  const revenueTotal = completedOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const avgOrderValue = completedOrders.length > 0 ? revenueTotal / completedOrders.length : 0;
+  const totalProductsSold = completedOrders.reduce((sum, o) => sum + (o.items ? o.items.reduce((s, i) => s + (i.quantity || 1), 0) : 0), 0);
+  const pendingRevenueValue = orders.filter(o => o.status === 'pending').reduce((sum, o) => sum + (o.total || 0), 0);
+  const netRevenueValue = revenueTotal * 0.9;
+  const refundRateValue = orders.length > 0 ? Math.round((orders.filter(o => o.status === 'cancelled').length / orders.length) * 100) : 0;
+
+  const now = new Date();
+  const last7 = completedOrders.filter(o => { const d = new Date(o.date || o.orderNumber); return d >= new Date(now.getTime() - 7 * 86400000); });
+  const prev7 = completedOrders.filter(o => { const d = new Date(o.date || o.orderNumber); const start = new Date(now.getTime() - 14 * 86400000); return d >= start && d < new Date(now.getTime() - 7 * 86400000); });
+  const last7Aov = last7.length > 0 ? last7.reduce((s, o) => s + (o.total || 0), 0) / last7.length : 0;
+  const prev7Aov = prev7.length > 0 ? prev7.reduce((s, o) => s + (o.total || 0), 0) / prev7.length : 0;
+  const aovTrendValue = prev7Aov > 0 ? Math.round(((last7Aov - prev7Aov) / prev7Aov) * 100) : 0;
+
+  const profitMarginValue = revenueTotal > 0 ? Math.round((netRevenueValue / revenueTotal) * 100) : 0;
 
   if (statTotal) statTotal.textContent = totalOrders;
   if (statPending) statPending.textContent = pendingOrders;
-  if (statRevenue) statRevenue.textContent = formatPrice(totalRevenue);
+  if (statRevenue) statRevenue.textContent = formatPrice(revenueTotal);
   if (statCustomers) statCustomers.textContent = totalCustomers;
+  if (netRevenue) netRevenue.textContent = formatPrice(netRevenueValue);
+  if (pendingRevenue) pendingRevenue.textContent = formatPrice(pendingRevenueValue);
+  if (aov) aov.textContent = formatPrice(avgOrderValue);
+  if (productsSold) productsSold.textContent = totalProductsSold;
+  if (refundRate) refundRate.textContent = refundRateValue + '%';
+  if (aovTrend) {
+    aovTrend.textContent = (aovTrendValue >= 0 ? '+' : '') + aovTrendValue + '%';
+    aovTrend.style.color = aovTrendValue >= 0 ? '#25D366' : '#F44336';
+  }
+  if (profitMargin) profitMargin.textContent = profitMarginValue + '%';
 
   const recentOrders = document.getElementById('recent-orders');
   if (recentOrders) {
@@ -195,17 +240,18 @@ function renderAnalytics() {
   const orders = ADMIN_STATE.orders;
   const range = parseInt(document.getElementById('analytics-range')?.value || '30');
 
-  // Filter orders within range
+  const filteredOrders = getFilteredOrders();
+
   const now = new Date();
   const rangeStart = new Date(now.getTime() - range * 86400000);
-  const filteredOrders = orders.filter(o => {
+  const rangeFilteredOrders = filteredOrders.filter(o => {
     const d = new Date(o.date || o.orderNumber);
     return d >= rangeStart;
   });
 
-  const completedOrders = filteredOrders.filter(o => o.status !== 'cancelled');
+  const completedOrders = rangeFilteredOrders.filter(o => o.status !== 'cancelled');
   const grossRevenue = completedOrders.reduce((sum, o) => sum + (o.total || 0), 0);
-  const totalOrdersCount = filteredOrders.length;
+  const totalOrdersCount = rangeFilteredOrders.length;
   const avgOrderValue = totalOrdersCount > 0 ? grossRevenue / totalOrdersCount : 0;
   const totalProductsSold = completedOrders.reduce((sum, o) => sum + (o.items ? o.items.reduce((s, i) => s + (i.quantity || 1), 0) : 0), 0);
   const activeCustomers = new Set(completedOrders.map(o => o.customer?.phone)).size;
@@ -213,7 +259,7 @@ function renderAnalytics() {
 
   // Revenue growth (compare current period vs previous period)
   const prevStart = new Date(rangeStart.getTime() - range * 86400000);
-  const prevOrders = orders.filter(o => {
+  const prevOrders = filteredOrders.filter(o => {
     const d = new Date(o.date || o.orderNumber);
     return d >= prevStart && d < rangeStart && o.status !== 'cancelled';
   });
@@ -246,7 +292,7 @@ function renderAnalytics() {
   if (conversionEl) conversionEl.textContent = conversionRate + '%';
 
   // Order Status Breakdown
-  renderAnalyticsStatusBreakdown(filteredOrders);
+  renderAnalyticsStatusBreakdown(rangeFilteredOrders);
 
   // Best Performing Category
   renderAnalyticsBestCategory(completedOrders);
@@ -261,13 +307,38 @@ function renderAnalytics() {
   renderAnalyticsCategoryChart(completedOrders);
 
   // Recent Transactions
-  renderAnalyticsRecent(filteredOrders);
+  renderAnalyticsRecent(rangeFilteredOrders);
 
   // Traffic & Sources Overview
   renderAnalyticsTraffic(orders);
 
   // Top 10 Products by Revenue
   renderAnalyticsTopProducts(completedOrders);
+
+  // Monthly and Quarterly comparisons
+  renderRevenueComparisons(rangeFilteredOrders);
+
+  // Additional analytics metrics
+  const refundRateEl = document.getElementById('analytics-refund-rate');
+  const aovTrendEl = document.getElementById('analytics-aov-trend');
+  const profitMarginEl = document.getElementById('analytics-profit-margin');
+
+  const refundRate = orders.length > 0 ? Math.round((orders.filter(o => o.status === 'cancelled').length / orders.length) * 100) : 0;
+  if (refundRateEl) refundRateEl.textContent = refundRate + '%';
+
+  const last7 = completedOrders.filter(o => { const d = new Date(o.date || o.orderNumber); return d >= new Date(now.getTime() - 7 * 86400000); });
+  const prev7 = completedOrders.filter(o => { const d = new Date(o.date || o.orderNumber); const start = new Date(now.getTime() - 14 * 86400000); return d >= start && d < new Date(now.getTime() - 7 * 86400000); });
+  const last7Aov = last7.length > 0 ? last7.reduce((s, o) => s + (o.total || 0), 0) / last7.length : 0;
+  const prev7Aov = prev7.length > 0 ? prev7.reduce((s, o) => s + (o.total || 0), 0) / prev7.length : 0;
+  const aovTrendValue = prev7Aov > 0 ? Math.round(((last7Aov - prev7Aov) / prev7Aov) * 100) : 0;
+  if (aovTrendEl) {
+    aovTrendEl.textContent = (aovTrendValue >= 0 ? '+' : '') + aovTrendValue + '%';
+    aovTrendEl.style.color = aovTrendValue >= 0 ? '#25D366' : '#F44336';
+  }
+
+  const netRevenueValue = grossRevenue * 0.9;
+  const profitMarginValue = grossRevenue > 0 ? Math.round((netRevenueValue / grossRevenue) * 100) : 0;
+  if (profitMarginEl) profitMarginEl.textContent = profitMarginValue + '%';
 }
 
 function renderAnalyticsStatusBreakdown(orders) {
@@ -535,6 +606,44 @@ function computeTrafficStats(orders) {
   return { todayOrders, avgDailyOrders, peakDay, peakDayCount, peakHour, peakHourCount, newCustomers, returningCustomers, returningRate };
 }
 
+function renderRevenueComparisons(orders) {
+  const monthlyEl = document.getElementById('analytics-monthly-revenue');
+  const quarterlyEl = document.getElementById('analytics-quarterly-revenue');
+  const monthlyChangeEl = document.getElementById('monthly-change');
+  const quarterlyChangeEl = document.getElementById('quarterly-change');
+
+  const now = new Date();
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const currentQuarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+  const prevQuarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3 - 3, 1);
+  const prevQuarterEnd = currentQuarterStart;
+
+  const thisMonth = orders.filter(o => o.status !== 'cancelled' && new Date(o.date || o.orderNumber) >= currentMonthStart);
+  const lastMonth = orders.filter(o => { if (o.status === 'cancelled') return false; const d = new Date(o.date || o.orderNumber); return d >= prevMonthStart && d < currentMonthStart; });
+  const thisQuarter = orders.filter(o => o.status !== 'cancelled' && new Date(o.date || o.orderNumber) >= currentQuarterStart);
+  const lastQuarter = orders.filter(o => { if (o.status === 'cancelled') return false; const d = new Date(o.date || o.orderNumber); return d >= prevQuarterStart && d < prevQuarterEnd; });
+
+  const monthlyRev = thisMonth.reduce((s, o) => s + (o.total || 0), 0);
+  const lastMonthRev = lastMonth.reduce((s, o) => s + (o.total || 0), 0);
+  const quarterlyRev = thisQuarter.reduce((s, o) => s + (o.total || 0), 0);
+  const lastQuarterRev = lastQuarter.reduce((s, o) => s + (o.total || 0), 0);
+
+  const monthlyChange = lastMonthRev > 0 ? Math.round(((monthlyRev - lastMonthRev) / lastMonthRev) * 100) : 0;
+  const quarterlyChange = lastQuarterRev > 0 ? Math.round(((quarterlyRev - lastQuarterRev) / lastQuarterRev) * 100) : 0;
+
+  if (monthlyEl) monthlyEl.textContent = formatPrice(monthlyRev);
+  if (quarterlyEl) quarterlyEl.textContent = formatPrice(quarterlyRev);
+  if (monthlyChangeEl) {
+    monthlyChangeEl.textContent = `${monthlyChange >= 0 ? '+' : ''}${monthlyChange}% vs last month`;
+    monthlyChangeEl.style.color = monthlyChange >= 0 ? '#25D366' : '#F44336';
+  }
+  if (quarterlyChangeEl) {
+    quarterlyChangeEl.textContent = `${quarterlyChange >= 0 ? '+' : ''}${quarterlyChange}% vs last quarter`;
+    quarterlyChangeEl.style.color = quarterlyChange >= 0 ? '#25D366' : '#F44336';
+  }
+}
+
 function renderAnalyticsTopProducts(orders) {
   const tbody = document.getElementById('analytics-top-products-table');
   if (!tbody) return;
@@ -566,35 +675,158 @@ function renderAnalyticsTopProducts(orders) {
 }
 
 // ===== EXPORT FUNCTIONS =====
-function exportAnalyticsCSV() {
-  const orders = ADMIN_STATE.orders || [];
-  if (!orders.length) { showToast('No data to export', 'error'); return; }
-  const header = 'Order,Customer,Phone,Total,Date,Status,Items\n';
+function getExportableOrders() {
+  return (getFilteredOrders && typeof getFilteredOrders === 'function' ? getFilteredOrders() : ADMIN_STATE.orders) || [];
+}
+
+function computeExportStats(orders) {
+  const completedOrders = orders.filter(o => o.status !== 'cancelled');
+  const revenueTotal = completedOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const avgOrderValue = completedOrders.length > 0 ? revenueTotal / completedOrders.length : 0;
+  const totalProductsSold = completedOrders.reduce((sum, o) => sum + (o.items ? o.items.reduce((s, i) => s + (i.quantity || 1), 0) : 0), 0);
+  const totalCustomers = new Set(completedOrders.map(o => o.customer?.phone).filter(Boolean)).size;
+  const refundRate = orders.length > 0 ? Math.round((orders.filter(o => o.status === 'cancelled').length / orders.length) * 100) : 0;
+
+  const counts = {};
+  orders.forEach(o => { counts[o.status] = (counts[o.status] || 0) + 1; });
+
+  const now = new Date();
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevMonthEnd = currentMonthStart;
+  const currentQuarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+  const prevQuarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3 - 3, 1);
+  const prevQuarterEnd = currentQuarterStart;
+  const thisMonth = orders.filter(o => o.status !== 'cancelled' && new Date(o.date || o.orderNumber) >= currentMonthStart);
+  const lastMonth = orders.filter(o => { if (o.status === 'cancelled') return false; const d = new Date(o.date || o.orderNumber); return d >= prevMonthStart && d < prevMonthEnd; });
+  const thisQuarter = orders.filter(o => o.status !== 'cancelled' && new Date(o.date || o.orderNumber) >= currentQuarterStart);
+  const lastQuarter = orders.filter(o => { if (o.status === 'cancelled') return false; const d = new Date(o.date || o.orderNumber); return d >= prevQuarterStart && d < prevQuarterEnd; });
+
+  return {
+    totalOrders: orders.length,
+    completedOrders: completedOrders.length,
+    cancelledOrders: orders.filter(o => o.status === 'cancelled').length,
+    totalRevenue: revenueTotal,
+    netRevenue: revenueTotal * 0.9,
+    avgOrderValue,
+    totalProductsSold,
+    totalCustomers,
+    refundRate,
+    statusBreakdown: counts,
+    monthlyRevenue: thisMonth.reduce((s, o) => s + (o.total || 0), 0),
+    lastMonthRevenue: lastMonth.reduce((s, o) => s + (o.total || 0), 0),
+    quarterlyRevenue: thisQuarter.reduce((s, o) => s + (o.total || 0), 0),
+    lastQuarterRevenue: lastQuarter.reduce((s, o) => s + (o.total || 0), 0)
+  };
+}
+
+function buildExportSummary(orders) {
+  const stats = computeExportStats(orders);
+  const lines = [
+    `# ADE Natural Cereals - Analytics Export`,
+    `# Generated: ${new Date().toLocaleString()}`,
+    `# Total Orders: ${stats.totalOrders}`,
+    `# Completed Orders: ${stats.completedOrders}`,
+    `# Cancelled Orders: ${stats.cancelledOrders}`,
+    `# Total Revenue: ${formatPrice(stats.totalRevenue)}`,
+    `# Net Revenue (est.): ${formatPrice(stats.netRevenue)}`,
+    `# Avg Order Value: ${formatPrice(stats.avgOrderValue)}`,
+    `# Products Sold: ${stats.totalProductsSold}`,
+    `# Customers: ${stats.totalCustomers}`,
+    `# Refund Rate: ${stats.refundRate}%`,
+    `# Monthly Revenue: ${formatPrice(stats.monthlyRevenue)}`,
+    `# Last Month Revenue: ${formatPrice(stats.lastMonthRevenue)}`,
+    `# Quarterly Revenue: ${formatPrice(stats.quarterlyRevenue)}`,
+    `# Last Quarter Revenue: ${formatPrice(stats.lastQuarterRevenue)}`,
+    `# Status Breakdown: ${Object.entries(stats.statusBreakdown).map(([k,v]) => `${k}=${v}`).join(', ')}`,
+    `#`
+  ];
+  return lines.join('\n') + '\n';
+}
+
+function buildCsvFromOrders(orders) {
+  const header = 'Order,Customer,Phone,State,City,Total,Date,Status,Items\n';
   const rows = orders.map(o => {
-    const items = (o.items || []).map(i => `${i.name}×${i.quantity}`).join('; ');
-    return `${o.orderNumber},"${o.customer?.name || ''}",${o.customer?.phone || ''},${o.total || 0},${o.date || o.orderNumber},${o.status},"${items}"`;
+    const items = (o.items || []).map(i => `${i.name} x ${i.quantity}`).join(' | ');
+    return `${o.orderNumber || ''},"${(o.customer?.name || '').replace(/"/g, '""')}",${o.customer?.phone || ''},"${(o.customer?.state || '').replace(/"/g, '""')}","${(o.customer?.city || '').replace(/"/g, '""')}",${o.total || 0},"${o.date || o.orderNumber}","${o.status}","${items.replace(/"/g, '""')}"`;
+  });
+  return header + rows.join('\n');
+}
+
+function exportFilteredView() {
+  const orders = (typeof getFilteredOrders === 'function' ? getFilteredOrders() : ADMIN_STATE.orders) || [];
+  if (!orders.length) { showToast('No matching orders to export', 'error'); return; }
+  const header = 'Order,Customer,Phone,State,City,Total,Date,Status,Items\n';
+  const rows = orders.map(o => {
+    const items = (o.items || []).map(i => `${i.name} x ${i.quantity}`).join(' | ');
+    return `${o.orderNumber || ''},"${(o.customer?.name || '').replace(/"/g, '""')}",${o.customer?.phone || ''},"${(o.customer?.state || '').replace(/"/g, '""')}","${(o.customer?.city || '').replace(/"/g, '""')}",${o.total || 0},"${o.date || o.orderNumber}","${o.status}","${items.replace(/"/g, '""')}"`;
   });
   const csv = header + rows.join('\n');
+  downloadBlob(csv, `ade-filtered-${new Date().toISOString().slice(0,10)}.csv`, 'text/csv');
+  showToast(`Exported ${orders.length} filtered order(s)`);
+}
+
+function exportAnalyticsExcel() {
+  const orders = getExportableOrders();
+  if (!orders.length) { showToast('No data to export', 'error'); return; }
+  const headers = ['Order', 'Customer', 'Phone', 'State', 'City', 'Total', 'Date', 'Status', 'Items'];
+  const escaped = (v) => `"${String(v || '').replace(/"/g, '""')}"`;
+  const rows = orders.map(o => {
+    const items = (o.items || []).map(i => `${i.name} x ${i.quantity}`).join(' | ');
+    return [o.orderNumber || '', o.customer?.name || '', o.customer?.phone || '', o.customer?.state || '', o.customer?.city || '', o.total || 0, o.date || o.orderNumber, o.status, items].map(escaped).join(',');
+  });
+  const xhtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body><table border="1"><thead><tr>${headers.map(escaped).map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr><td>${r}</td></tr>`).join('')}</tbody></table></body></html>`;
+  downloadBlob(xhtml, `ade-analytics-${new Date().toISOString().slice(0,10)}.xlsx`, 'application/vnd.ms-excel');
+  showToast(`Exported ${orders.length} filtered order(s) as Excel`);
+}
+
+function exportAnalyticsCSV() {
+  const orders = getExportableOrders();
+  if (!orders.length) { showToast('No data to export', 'error'); return; }
+  const csv = buildCsvFromOrders(orders);
   downloadBlob(csv, `ade-analytics-${new Date().toISOString().slice(0,10)}.csv`, 'text/csv');
-  showToast('CSV exported successfully');
+  showToast(`Exported ${orders.length} filtered order(s) as CSV`);
 }
 
 function exportAnalyticsJSON() {
-  const data = { exportedAt: new Date().toISOString(), totalOrders: ADMIN_STATE.orders.length, orders: ADMIN_STATE.orders || [] };
-  downloadBlob(JSON.stringify(data, null, 2), `ade-analytics-${new Date().toISOString().slice(0,10)}.json`, 'application/json');
-  showToast('JSON exported successfully');
+  const orders = getExportableOrders();
+  if (!orders.length) { showToast('No data to export', 'error'); return; }
+  const stats = computeExportStats(orders);
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    filters: ADMIN_STATE.advancedFilters || {},
+    summary: {
+      totalOrders: stats.totalOrders,
+      completedOrders: stats.completedOrders,
+      cancelledOrders: stats.cancelledOrders,
+      totalRevenue: stats.totalRevenue,
+      netRevenue: stats.netRevenue,
+      avgOrderValue: stats.avgOrderValue,
+      totalProductsSold: stats.totalProductsSold,
+      totalCustomers: stats.totalCustomers,
+      refundRate: stats.refundRate + '%',
+      statusBreakdown: stats.statusBreakdown,
+      monthlyRevenue: stats.monthlyRevenue,
+      lastMonthRevenue: stats.lastMonthRevenue,
+      quarterlyRevenue: stats.quarterlyRevenue,
+      lastQuarterRevenue: stats.lastQuarterRevenue
+    },
+    orders
+  };
+  downloadBlob(JSON.stringify(payload, null, 2), `ade-analytics-${new Date().toISOString().slice(0,10)}.json`, 'application/json');
+  showToast(`Exported ${orders.length} filtered order(s) as JSON with summary`);
 }
 
 function exportAnalyticsPDF() {
-  const orders = ADMIN_STATE.orders || [];
+  const orders = getExportableOrders();
   if (!orders.length) { showToast('No data to export', 'error'); return; }
-  const total = orders.filter(o => o.status !== 'cancelled').reduce((sum, o) => sum + (o.total || 0), 0);
-  const summary = `ADE Natural Cereals - Analytics Report\nGenerated: ${new Date().toLocaleString()}\n\n`;
-  const stats = `Total Orders: ${orders.length}\nTotal Revenue: ${formatPrice(total)}\nCustomers: ${new Set(orders.map(o => o.customer?.phone)).size}\n\n`;
-  const csv = summary + stats + 'Order,Customer,Total,Date,Status\n' +
-    orders.map(o => `${o.orderNumber},"${o.customer?.name || ''}",${o.total},${o.date || o.orderNumber},${o.status}`).join('\n');
+  const stats = computeExportStats(orders);
+  const now = new Date();
+  const summary = `ADE Natural Cereals - Analytics Report\nGenerated: ${now.toLocaleString()}\nFilters: ${JSON.stringify(ADMIN_STATE.advancedFilters || {}, null, 2)}\n\nSummary\n-------\nTotal Orders: ${stats.totalOrders}\nCompleted: ${stats.completedOrders}\nCancelled: ${stats.cancelledOrders}\nTotal Revenue: ${formatPrice(stats.totalRevenue)}\nNet Revenue (est.): ${formatPrice(stats.netRevenue)}\nAverage Order Value: ${formatPrice(stats.avgOrderValue)}\nProducts Sold: ${stats.totalProductsSold}\nCustomers: ${stats.totalCustomers}\nRefund Rate: ${stats.refundRate}%\nMonthly Revenue: ${formatPrice(stats.monthlyRevenue)}\nLast Month: ${formatPrice(stats.lastMonthRevenue)}\nQuarterly Revenue: ${formatPrice(stats.quarterlyRevenue)}\nLast Quarter: ${formatPrice(stats.lastQuarterRevenue)}\n\nStatus Breakdown\n----------------\n${Object.entries(stats.statusBreakdown).map(([k,v]) => `${k}: ${v}`).join('\n')}\n\nOrders\n------\n`;
+  const rows = orders.map(o => `${o.orderNumber || ''},"${((o.customer?.name || '')).replace(/"/g, '""')}",${o.customer?.phone || ''},${o.total || 0},${new Date(o.date || o.orderNumber).toLocaleString()},${o.status}`).join('\n');
+  const csv = summary + rows;
   downloadBlob(csv, `ade-analytics-report-${new Date().toISOString().slice(0,10)}.txt`, 'text/plain');
-  showToast('Report exported');
+  showToast(`Exported ${orders.length} filtered order(s) as report`);
 }
 
 function downloadBlob(content, filename, type) {
@@ -614,6 +846,215 @@ function setTrendRange(days) {
   ADMIN_STATE.trendRange = days;
   $$('.trend-range').forEach(b => b.classList.toggle('active', parseInt(b.dataset.range) === days));
   renderAnalytics();
+}
+
+// ===== ADVANCED FILTERS =====
+function toggleAdvancedFilters() {
+  const el = document.getElementById('advanced-filters');
+  const btn = document.getElementById('toggle-filters-btn');
+  if (!el || !btn) return;
+  const isVisible = el.style.display !== 'none' && el.classList.contains('visible');
+  if (isVisible) {
+    el.style.display = 'none';
+    el.classList.remove('visible');
+    btn.classList.remove('active');
+  } else {
+    el.style.display = 'block';
+    el.classList.add('visible');
+    btn.classList.add('active');
+    populateCategoryFilter();
+    if (!document.getElementById('filter-start-date')?.value) {
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 86400000);
+      const startInput = document.getElementById('filter-start-date');
+      const endInput = document.getElementById('filter-end-date');
+      if (startInput) startInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+      if (endInput) endInput.value = now.toISOString().split('T')[0];
+    }
+  }
+}
+
+function populateCategoryFilter() {
+  const container = document.getElementById('filter-category-container');
+  if (!container) return;
+  if (container.dataset.loaded === 'true') return;
+
+  const orders = ADMIN_STATE.orders;
+  const categories = [];
+  orders.forEach(o => {
+    (o.items || []).forEach(item => {
+      if (item.category && !categories.includes(item.category)) categories.push(item.category);
+    });
+  });
+  categories.forEach(cat => {
+    const label = document.createElement('label');
+    label.className = 'category-chip';
+    label.innerHTML = `<input type="checkbox" value="${cat}" onchange="applyAdvancedFilters()" style="display:none"> ${cat}`;
+    container.appendChild(label);
+  });
+  container.dataset.loaded = 'true';
+}
+
+function getSelectedCategories() {
+  const container = document.getElementById('filter-category-container');
+  if (!container) return [];
+  const checkboxes = container.querySelectorAll('input[type="checkbox"]:checked');
+  return Array.from(checkboxes).map(cb => cb.value).filter(v => v !== '');
+}
+
+function updateCategoryChipClasses(selectedCategories) {
+  const container = document.getElementById('filter-category-container');
+  if (!container) return;
+  container.querySelectorAll('.category-chip').forEach(chip => {
+    const cb = chip.querySelector('input[type="checkbox"]');
+    if (cb && cb.value === '') return;
+    chip.classList.toggle('checked', selectedCategories.includes(cb?.value || ''));
+  });
+  if (container.querySelector('.category-chip:not(:has(input[type="checkbox"]))')) return;
+  const allChip = container.querySelector('input[value=""]')?.closest('.category-chip');
+  if (allChip) allChip.classList.toggle('checked', selectedCategories.length === 0);
+}
+
+function applyAdvancedFilters() {
+  const startDate = document.getElementById('filter-start-date')?.value;
+  const endDate = document.getElementById('filter-end-date')?.value;
+  const status = document.getElementById('filter-status')?.value;
+  const minPrice = document.getElementById('filter-min-price')?.value;
+  const maxPrice = document.getElementById('filter-max-price')?.value;
+  const productSearch = document.getElementById('filter-product-search')?.value?.trim().toLowerCase() || '';
+  const customerSegment = document.getElementById('filter-customer-segment')?.value || '';
+  const selectedCategories = getSelectedCategories();
+
+  ADMIN_STATE.advancedFilters = {
+    startDate,
+    endDate,
+    categories: selectedCategories,
+    productSearch,
+    paymentMethod: document.getElementById('filter-payment-method')?.value || '',
+    customerSegment,
+    status,
+    minPrice: minPrice ? parseFloat(minPrice) : null,
+    maxPrice: maxPrice ? parseFloat(maxPrice) : null
+  };
+
+  updateCategoryChipClasses(selectedCategories);
+  updateFilterBadge();
+  renderAnalytics();
+}
+
+function clearAdvancedFilters() {
+  document.getElementById('filter-start-date').value = '';
+  document.getElementById('filter-end-date').value = '';
+  document.getElementById('filter-status').value = '';
+  document.getElementById('filter-min-price').value = '';
+  document.getElementById('filter-max-price').value = '';
+  document.getElementById('filter-customer-segment').value = '';
+  const productSearchEl = document.getElementById('filter-product-search');
+  if (productSearchEl) productSearchEl.value = '';
+  const container = document.getElementById('filter-category-container');
+  if (container) container.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+
+  ADMIN_STATE.advancedFilters = {
+    startDate: '',
+    endDate: '',
+    categories: [],
+    productSearch: '',
+    paymentMethod: '',
+    customerSegment: '',
+    status: '',
+    minPrice: null,
+    maxPrice: null
+  };
+
+  updateCategoryChipClasses([]);
+  updateFilterBadge();
+  renderAnalytics();
+}
+
+function updateFilterBadge() {
+  const badge = document.getElementById('filter-badge');
+  if (!badge) return;
+  const f = ADMIN_STATE.advancedFilters;
+  let count = 0;
+  if (f.startDate) count++;
+  if (f.endDate) count++;
+  if (f.categories && f.categories.length > 0) count++;
+  if (f.productSearch) count++;
+  if (f.customerSegment) count++;
+  if (f.paymentMethod) count++;
+  if (f.status) count++;
+  if (f.minPrice !== null) count++;
+  if (f.maxPrice !== null) count++;
+  if (count > 0) {
+    badge.textContent = count;
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function getFilteredOrders() {
+  const orders = ADMIN_STATE.orders;
+  const { startDate, endDate, categories, productSearch, paymentMethod, customerSegment, status, minPrice, maxPrice } = ADMIN_STATE.advancedFilters;
+  const hasCategoryFilter = categories && categories.length > 0;
+  const hasProductSearch = !!(productSearch && productSearch.length >= 2);
+
+  const sortedByDate = [...orders].sort((a, b) => new Date(a.date || a.orderNumber) - new Date(b.date || b.orderNumber));
+  const phoneFirstOrderDate = {};
+  sortedByDate.forEach(o => {
+    const phone = o.customer?.phone;
+    if (phone && !(phone in phoneFirstOrderDate)) {
+      phoneFirstOrderDate[phone] = o.date || o.orderNumber;
+    }
+  });
+
+  return orders.filter(o => {
+    const d = new Date(o.date || o.orderNumber);
+    if (isNaN(d.getTime())) return false;
+
+    if (startDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      if (d < start) return false;
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      if (d > end) return false;
+    }
+
+    if (status && o.status !== status) return false;
+
+    if (paymentMethod && o.payment?.method !== paymentMethod) return false;
+
+    if (hasCategoryFilter) {
+      const itemCategories = new Set((o.items || []).map(item => item.category).filter(Boolean));
+      const matches = categories.some(cat => itemCategories.has(cat));
+      if (!matches) return false;
+    }
+
+    if (hasProductSearch) {
+      const matchesProduct = (o.items || []).some(item =>
+        (item.name || '').toLowerCase().includes(productSearch)
+      );
+      if (!matchesProduct) return false;
+    }
+
+    if (customerSegment) {
+      const phone = o.customer?.phone;
+      const firstDate = phone ? phoneFirstOrderDate[phone] : null;
+      if (customerSegment === 'new') {
+        if (!firstDate || firstDate !== (o.date || o.orderNumber)) return false;
+      } else if (customerSegment === 'returning') {
+        if (!firstDate || firstDate === (o.date || o.orderNumber)) return false;
+      }
+    }
+
+    if (minPrice !== null && (o.total || 0) < minPrice) return false;
+    if (maxPrice !== null && (o.total || 0) > maxPrice) return false;
+
+    return true;
+  });
 }
 
 // ===== ORDERS =====

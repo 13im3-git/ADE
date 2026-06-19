@@ -645,7 +645,7 @@ function renderCheckout() {
   updateCheckoutView();
 }
 
-let checkoutData = { name: '', phone: '', address: '', state: '', city: '', senderName: '', amountSent: '', transferTime: '', screenshot: null };
+let checkoutData = { name: '', phone: '', address: '', state: '', city: '', senderName: '', amountSent: '', transferTime: '', screenshot: null, paymentMethod: 'bank_transfer' };
 
 function updateCheckoutView() {
   const container = document.getElementById('checkout-container');
@@ -671,15 +671,33 @@ function updateCheckoutView() {
   if (STATE.checkoutStep === 2) {
     const cs = getContactSettings();
     const total = getCartTotal();
-    html += `<h3 class="checkout-form-title">Payment — Bank Transfer</h3>
-      <p style="text-align:center;color:var(--gray-500);margin-bottom:24px">Transfer the total to the account below</p>
-      <div class="checkout-summary">
-        <div class="checkout-summary-item"><span>Bank</span><span>${cs.bankName}</span></div>
-        <div class="checkout-summary-item"><span>Account Name</span><span>${cs.accountName}</span></div>
-        <div class="checkout-summary-item"><span>Account Number</span><span style="font-size:1.2rem;letter-spacing:2px;color:var(--gold);font-weight:700">${cs.accountNumber}</span></div>
-        <div class="checkout-summary-total"><span>Amount to Pay</span><span class="amount">${formatPrice(total)}</span></div>
+    html += `<h3 class="checkout-form-title">Payment Method</h3>
+      <p style="text-align:center;color:var(--gray-500);margin-bottom:24px">Select your preferred payment method</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+        <label id="pm-bank_transfer" style="display:flex;align-items:center;gap:12px;padding:20px;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;cursor:pointer;transition:var(--transition-smooth)" onmouseover="if(this.id!=='pm-selected')this.style.borderColor='rgba(212,175,55,0.3)'" onmouseout="if(this.id!=='pm-selected')this.style.borderColor='var(--glass-border)'">
+          <input type="radio" name="payment-method" value="bank_transfer" ${checkoutData.paymentMethod === 'bank_transfer' ? 'checked' : ''} onchange="selectPaymentMethod(this)" style="accent-color:var(--gold);width:18px;height:18px">
+          <div>
+            <div style="font-weight:600;color:var(--white);font-size:0.9rem"><i class="fas fa-university" style="color:var(--gold);margin-right:6px"></i> Bank Transfer</div>
+            <div style="font-size:0.7rem;color:var(--gray-500);margin-top:2px">Pay via bank transfer</div>
+          </div>
+        </label>
+        <label id="pm-cod" style="display:flex;align-items:center;gap:12px;padding:20px;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;cursor:pointer;transition:var(--transition-smooth)" onmouseover="if(this.id!=='pm-selected')this.style.borderColor='rgba(212,175,55,0.3)'" onmouseout="if(this.id!=='pm-selected')this.style.borderColor='var(--glass-border)'">
+          <input type="radio" name="payment-method" value="cod" ${checkoutData.paymentMethod === 'cod' ? 'checked' : ''} onchange="selectPaymentMethod(this)" style="accent-color:var(--gold);width:18px;height:18px">
+          <div>
+            <div style="font-weight:600;color:var(--white);font-size:0.9rem"><i class="fas fa-money-bill-wave" style="color:var(--gold);margin-right:6px"></i> Cash on Delivery</div>
+            <div style="font-size:0.7rem;color:var(--gray-500);margin-top:2px">Pay when you receive</div>
+          </div>
+        </label>
       </div>
-      <button class="btn btn-primary btn-lg" style="width:100%;margin-top:16px" onclick="checkoutStep2()">I've Made the Transfer <i class="fas fa-arrow-right"></i></button>`;
+      <div id="bank-details-panel" style="display:${checkoutData.paymentMethod === 'bank_transfer' ? 'block' : 'none'};padding:20px;background:var(--glass-bg);border-radius:12px;border:1px solid var(--glass-border);margin-bottom:24px">
+        <div class="checkout-summary">
+          <div class="checkout-summary-item"><span>Bank</span><span>${cs.bankName}</span></div>
+          <div class="checkout-summary-item"><span>Account Name</span><span>${cs.accountName}</span></div>
+          <div class="checkout-summary-item"><span>Account Number</span><span style="font-size:1.2rem;letter-spacing:2px;color:var(--gold);font-weight:700">${cs.accountNumber}</span></div>
+          <div class="checkout-summary-total"><span>Amount to Pay</span><span class="amount">${formatPrice(total)}</span></div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-lg" style="width:100%;margin-top:16px" onclick="checkoutStep2()">Continue <i class="fas fa-arrow-right"></i></button>`;
   }
   
   if (STATE.checkoutStep === 3) {
@@ -717,6 +735,18 @@ function updateCheckoutView() {
   container.innerHTML = html;
 }
 
+function selectPaymentMethod(radio) {
+  checkoutData.paymentMethod = radio.value;
+  ['bank_transfer','cod'].forEach(id => {
+    const el = document.getElementById('pm-' + id);
+    if (!el) return;
+    el.id = id === radio.value ? 'pm-selected' : 'pm-' + id;
+    el.style.borderColor = id === radio.value ? 'rgba(212,175,55,0.5)' : 'var(--glass-border)';
+  });
+  const panel = document.getElementById('bank-details-panel');
+  if (panel) panel.style.display = radio.value === 'bank_transfer' ? 'block' : 'none';
+}
+
 function checkoutStep1() {
   const name = document.getElementById('checkout-name')?.value.trim();
   const phone = document.getElementById('checkout-phone')?.value.trim();
@@ -732,6 +762,9 @@ function checkoutStep1() {
 }
 
 function checkoutStep2() {
+  if (document.querySelector('input[name="payment-method"]:checked')) {
+    checkoutData.paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
+  }
   STATE.checkoutStep = 3;
   updateCheckoutView();
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -765,8 +798,8 @@ function checkoutStep3() {
     orderNumber: generateOrderNumber(), date: new Date().toISOString(),
     customer: { name: checkoutData.name, phone: checkoutData.phone, address: checkoutData.address, state: checkoutData.state, city: checkoutData.city },
     items: [...STATE.cart], total: getCartTotal(),
-    payment: { senderName, amountSent, transferTime, screenshot: checkoutData.screenshot },
-    status: 'pending', tracking: ''
+    status: 'pending', tracking: '',
+    payment: { senderName, amountSent, transferTime, screenshot: checkoutData.screenshot, method: checkoutData.paymentMethod }
   };
   
   STATE.orders.unshift(order);
@@ -777,7 +810,7 @@ function checkoutStep3() {
   updateCheckoutView();
   const display = document.getElementById('order-number-display');
   if (display) display.textContent = order.orderNumber;
-  checkoutData = { name: '', phone: '', address: '', state: '', city: '', senderName: '', amountSent: '', transferTime: '', screenshot: null };
+  checkoutData = { name: '', phone: '', address: '', state: '', city: '', senderName: '', amountSent: '', transferTime: '', screenshot: null, paymentMethod: 'bank_transfer' };
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 

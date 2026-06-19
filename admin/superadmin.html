@@ -7,11 +7,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌾</text></svg>">
 
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Montserrat:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -37,7 +32,7 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&family=Bebas+Neue&family=Poppins:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Montserrat:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
   <!-- Swiper CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11.1.4/swiper-bundle.min.css">
@@ -171,6 +166,55 @@
             <div class="stat-number" id="stat-customers">0</div>
             <div class="stat-label">Customers</div>
           </div>
+          <div class="stat-card">
+            <div class="stat-header">
+              <i class="fas fa-wallet"></i>
+            </div>
+            <div class="stat-number" id="stat-net-revenue">₦0</div>
+            <div class="stat-label">Net Revenue (est.)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-header">
+              <i class="fas fa-arrow-trend-up"></i>
+            </div>
+            <div class="stat-number" id="stat-revenue-growth">0%</div>
+            <div class="stat-label">Revenue Growth</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-header">
+              <i class="fas fa-receipt"></i>
+            </div>
+            <div class="stat-number" id="stat-aov">₦0</div>
+            <div class="stat-label">Avg Order Value</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-header">
+              <i class="fas fa-boxes-stacked"></i>
+            </div>
+            <div class="stat-number" id="stat-products-sold">0</div>
+            <div class="stat-label">Products Sold</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-header">
+              <i class="fas fa-rotate-left"></i>
+            </div>
+            <div class="stat-number" id="stat-refund-rate">0%</div>
+            <div class="stat-label">Refund Rate</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-header">
+              <i class="fas fa-receipt"></i>
+            </div>
+            <div class="stat-number" id="stat-aov-trend">0%</div>
+            <div class="stat-label">Avg Order Value Trend</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-header">
+              <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stat-number" id="stat-profit-margin">0%</div>
+            <div class="stat-label">Profit Margin %</div>
+          </div>
         </div>
         
         <div class="glass-card">
@@ -194,9 +238,9 @@
       <!-- Tab: Analytics -->
       <div class="tab-content" id="tab-analytics">
         <div class="glass-card" style="margin-bottom:24px">
-          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:24px">
+          <div class="analytics-header-row">
             <h3>Revenue Analytics</h3>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
               <select class="form-select" id="analytics-range" onchange="renderAnalytics()" style="width:auto;padding:8px 12px;font-size:0.8rem">
                 <option value="7">Last 7 days</option>
                 <option value="30" selected>Last 30 days</option>
@@ -205,14 +249,81 @@
               </select>
               <button class="btn btn-gold btn-sm" onclick="exportAnalyticsCSV()"><i class="fas fa-download"></i> Export CSV</button>
               <button class="btn btn-ghost btn-sm" onclick="exportAnalyticsJSON()"><i class="fas fa-code"></i> Export JSON</button>
+              <button class="btn btn-ghost btn-sm" onclick="exportFilteredView()" title="Export only the orders matching active filters"><i class="fas fa-filter"></i> Export Filtered View</button>
+              <button class="btn btn-ghost btn-sm" onclick="exportAnalyticsExcel()" title="Export as Excel (.xls)"><i class="fas fa-file-excel"></i> Export Excel</button>
+              <button class="btn btn-danger btn-sm" onclick="exportAnalyticsPDF()"><i class="fas fa-file-pdf"></i> Export PDF</button>
+              <button class="btn btn-ghost btn-sm" id="toggle-filters-btn" onclick="toggleAdvancedFilters()">
+                <i class="fas fa-sliders-h"></i> Filters <span id="filter-badge" style="display:none;background:var(--pink);color:var(--white);font-size:0.65rem;padding:2px 6px;border-radius:50%;margin-left:4px"></span>
+              </button>
             </div>
           </div>
+
+          <div id="advanced-filters" style="display:none;padding:20px;background:var(--glass-bg);border-radius:12px;border:1px solid var(--glass-border);margin-bottom:24px">
+            <h4 style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;color:var(--gold)">Advanced Filters</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Start Date</label>
+                <input type="date" id="filter-start-date" onchange="applyAdvancedFilters()" style="padding:8px 12px;font-size:0.8rem">
+              </div>
+              <div class="form-group">
+                <label>End Date</label>
+                <input type="date" id="filter-end-date" onchange="applyAdvancedFilters()" style="padding:8px 12px;font-size:0.8rem">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Categories</label>
+                <div id="filter-category-container" class="multi-select-categories" style="display:flex;flex-wrap:wrap;gap:6px;max-height:140px;overflow-y:auto;padding:8px 10px;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px">
+                  <label class="category-chip" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;cursor:pointer;font-size:0.8rem;color:var(--gray-500);border:1px solid var(--glass-border);transition:all .2s;background:rgba(255,255,255,0.02)">
+                    <input type="checkbox" value="" onchange="applyAdvancedFilters()" style="display:none"> All
+                  </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Product Search</label>
+                <input type="text" id="filter-product-search" placeholder="Type product name to search..." oninput="applyAdvancedFilters()" style="padding:8px 12px;font-size:0.8rem;width:100%">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Min Order Value (₦)</label>
+                <input type="number" id="filter-min-price" placeholder="0" onchange="applyAdvancedFilters()" style="padding:8px 12px;font-size:0.8rem" min="0">
+              </div>
+              <div class="form-group">
+                <label>Max Order Value (₦)</label>
+                <input type="number" id="filter-max-price" placeholder="No limit" onchange="applyAdvancedFilters()" style="padding:8px 12px;font-size:0.8rem" min="0">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Order Status</label>
+                <select class="form-select" id="filter-status" onchange="applyAdvancedFilters()" style="width:100%">
+                  <option value="">All Statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="processing">Processing</option>
+                  <option value="shipped">Shipped</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Customer Segment</label>
+                <select class="form-select" id="filter-customer-segment" onchange="applyAdvancedFilters()" style="width:100%">
+                  <option value="">All</option>
+                  <option value="new">New Customer</option>
+                  <option value="returning">Returning Customer</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
           
           <div class="stats-grid" id="analytics-stats">
             <div class="stat-card">
               <div class="stat-header"><i class="fas fa-coins"></i></div>
-              <div class="stat-number" id="analytics-revenue">₦0</div>
-              <div class="stat-label">Total Revenue</div>
+              <div class="stat-number" id="analytics-gross-revenue">₦0</div>
+              <div class="stat-label">Gross Revenue</div>
             </div>
             <div class="stat-card">
               <div class="stat-header"><i class="fas fa-shopping-bag"></i></div>
@@ -235,9 +346,21 @@
               <div class="stat-label">Active Customers</div>
             </div>
             <div class="stat-card">
-              <div class="stat-header"><i class="fas fa-chart-line"></i></div>
+              <div class="stat-header"><i class="fas fa-chart-pie"></i></div>
               <div class="stat-number" id="analytics-conversion">0%</div>
               <div class="stat-label">Conversion Rate</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-header"><i class="fas fa-calendar-day"></i></div>
+              <div class="stat-number" id="analytics-monthly-revenue">₦0</div>
+              <div class="stat-label">This Month vs Last Month</div>
+              <div id="monthly-change" style="font-size:0.7rem;margin-top:4px"></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-header"><i class="fas fa-calendar-week"></i></div>
+              <div class="stat-number" id="analytics-quarterly-revenue">₦0</div>
+              <div class="stat-label">This Quarter vs Last Quarter</div>
+              <div id="quarterly-change" style="font-size:0.7rem;margin-top:4px"></div>
             </div>
           </div>
         </div>
@@ -530,16 +653,17 @@
   <!-- GSAP -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-
+  
   <!-- Swiper JS -->
   <script src="https://cdn.jsdelivr.net/npm/swiper@11.1.4/swiper-bundle.min.js"></script>
-
+  
   <!-- AOS JS -->
   <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
-
+  
   <!-- Main Scripts -->
   <script src="../js/gsap-init.js"></script>
   <script src="../js/components.js"></script>
   <script src="js/admin.js"></script>
+  <script src="js/analytics.js"></script>
 </body>
 </html>
