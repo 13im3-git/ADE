@@ -1,0 +1,82 @@
+services:
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: tailscale
+    hostname: vsp-tailscale
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_ACCEPT_DNS=false
+    volumes:
+      - tailscale-state:/var/lib/tailscale
+    ports:
+      - "41641:41641/udp"
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - SYS_MODULE
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
+    restart: unless-stopped
+    networks:
+      - vsp-net
+    healthcheck:
+      test: ["CMD", "tailscale", "ping", "-c", "1", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  rustdesk-hbbs:
+    image: rustdesk/rustdesk-server:latest
+    container_name: hbbs
+    ports:
+      - "21115:21115"
+      - "21116:21116/udp"
+      - "21116:21116/tcp"
+      - "21118:21118/tcp"
+      - "21119:21119/tcp"
+    environment:
+      - RELAY_SERVER=${RELAY_SERVER:-hbbr:21119}
+      - ENCRYPTED_ONLY=1
+    volumes:
+      - hbbs-data:/root
+    depends_on:
+      - hbbr
+    networks:
+      - vsp-net
+    restart: unless-stopped
+    command: hbbs -r ${RELAY_SERVER:-hbbr:21119}
+
+  hbbr:
+    image: rustdesk/rustdesk-server:latest
+    container_name: hbbr
+    ports:
+      - "21117:21117/tcp"
+      - "21119:21119/tcp"
+    environment:
+      - ENCRYPTED_ONLY=1
+    volumes:
+      - hbbr-data:/root
+    networks:
+      - vsp-net
+    restart: unless-stopped
+    command: hbbr
+
+volumes:
+  tailscale-state:
+    driver: local
+  hbbs-data:
+    driver: local
+  hbbr-data:
+    driver: local
+
+networks:
+  vsp-net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16

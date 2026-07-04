@@ -1,0 +1,12 @@
+{
+  "name": "vsp",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "cd server && npm install && cd ../client && npm install",
+    "dev": "docker compose up -d",
+    "dev:down": "docker compose down",
+    "dev:logs": "docker compose logs -f",
+    "test": "echo \"Run 'docker compose up && open http://localhost:3000' to test\""
+  }
+}
