@@ -11,18 +11,18 @@ Self-hosted web dashboard for managing remote device connections via Tailscale, 
 | Remote Desktop | RustDesk (hbbs + hbr) |
 | Dashboard API | Express / TypeScript |
 | Dashboard UI | React + Vite |
-| Hosting | Render (Docker) |
+| Hosting | Railway (Docker) |
 
 ## Architecture
 
 ```
-                         ┌─────────────────────────────────┐
-                         │           Render Cloud           │
-                         │  ┌──────────────────────────┐    │
-                         │  │  VSP Dashboard (Express) │    │
-                         │  │  Port: 10000             │    │
-                         │  └──────────────────────────┘    │
-                         └─────────────────────────────────┘
+                          ┌─────────────────────────────────┐
+                          │          Railway Cloud           │
+                          │  ┌──────────────────────────┐    │
+                          │  │  VSP Dashboard (Express) │    │
+                          │  │  Port: 3000              │    │
+                          │  └──────────────────────────┘    │
+                          └─────────────────────────────────┘
                                     │
               ┌─────────────────────┼─────────────────────┐
               │                     │                     │
@@ -38,7 +38,7 @@ Self-hosted web dashboard for managing remote device connections via Tailscale, 
 - Docker + Docker Compose
 - Tailscale account ([sign up](https://tailscale.com))
 - Tailscale API key (Settings → Keys → Generate API key)
-- A cloud VM (Render worker) with exposed ports
+- A cloud VM (Railway worker) with exposed ports
 
 ## Local Development
 
@@ -96,24 +96,26 @@ Self-hosted web dashboard for managing remote device connections via Tailscale, 
 On each device you want to access remotely, configure RustDesk to use your self-hosted server:
 
 1. Open RustDesk → Settings → Network
-2. Set **ID Server**: `<your-render-domain>:21115`
-3. Set **Relay Server**: `<your-render-domain>:21119`
+2. Set **ID Server**: `<your-railway-domain>:3000`
+3. Set **Relay Server**: `<your-railway-domain>:3000`
 4. Set **Key**: leave blank (or set if using key-based encryption)
 5. Enable **"Encrypted Only"**
 
-## Deploy to Render
+## Deploy to Railway
 
 1. Push this `vsp/` folder to a GitHub repository
-2. In Render, create a new **Web Service**
-3. Select your repo and set:
-   - **Environment**: Docker
-   - **Dockerfile path**: `vsp/Dockerfile`
-   - **Port**: `10000` (Render default)
-4. Add environment variables:
+2. In Railway, create a new **Service** → select your repo
+3. Set the **Service Root** to `vsp/` so Railway uses the config inside this directory
+4. Railway will detect `railway.json` automatically (Dockerfile build)
+5. Add environment variables:
    - `TS_AUTHKEY`: your Tailscale auth key
    - `TAILSCALE_API_KEY`: your Tailscale API key
-   - `PORT`: `10000`
-5. Deploy. VSP will be available at `https://vsp-dashboard.onrender.com`
+6. Deploy. VSP will be available at `https://<service>.railway.app`
+
+If Railway does not auto-detect, manually set:
+- **Builder**: Dockerfile
+- **Dockerfile Path**: `vsp/Dockerfile`
+- **Start Command**: `node dist/index.js`
 
 ## Ports Used
 
@@ -122,7 +124,7 @@ On each device you want to access remotely, configure RustDesk to use your self-
 | RustDesk hbbs | 21115, 21116 | TCP/UDP |
 | RustDesk hbbr | 21117, 21119 | TCP |
 | Tailscale | 41641 | UDP |
-| VSP Dashboard | 3000 / 10000 | TCP |
+| VSP Dashboard | 3000 | TCP |
 
 ## Project Structure
 
@@ -130,7 +132,7 @@ On each device you want to access remotely, configure RustDesk to use your self-
 vsp/
 ├── docker-compose.yml        # Tailscale + RustDesk stack
 ├── Dockerfile                # Production Docker image
-├── render.yaml               # Render deployment config
+├── railway.json              # Railway deployment config
 ├── package.json              # Root scripts
 ├── server/
 │   ├── src/

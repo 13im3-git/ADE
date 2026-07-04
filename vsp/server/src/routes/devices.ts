@@ -1,5 +1,4 @@
 import { Router } from "express";
-import axios from "node-fetch";
 
 const router = Router();
 
